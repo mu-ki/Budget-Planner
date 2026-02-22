@@ -1,0 +1,34 @@
+@model BudgetPlanner.Web.Models.CreateReserveViewModel
+@{
+    ViewData["Title"] = "Create Reserve Account";
+    var expense = (BudgetPlanner.Web.Models.Expense)ViewBag.Expense;
+}
+
+<h1>Create Reserve Account</h1>
+
+<p>Create a sinking fund for <strong>@expense.Description</strong> (Amount: @expense.Amount.ToString("C"), @(expense.Type == BudgetPlanner.Web.Models.ExpenseType.Monthly ? "Monthly" : expense.IntervalMonths == 12 ? "Yearly" : $"Every {expense.IntervalMonths} months")).</p>
+
+<form asp-action="CreateReserve" method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <input type="hidden" asp-for="ExpenseId" />
+    <div class="form-group">
+        <label asp-for="TotalAmount"></label>
+        <input asp-for="TotalAmount" type="number" step="0.01" min="0" class="form-control" placeholder="e.g. 1500000 for chit total" />
+        <small class="form-text text-muted">Optional. E.g. total chit amount.</small>
+    </div>
+    <div class="form-group">
+        <label asp-for="TenureEnd"></label>
+        <input asp-for="TenureEnd" type="date" class="form-control" />
+        <small class="form-text text-muted">Optional. When this obligation ends.</small>
+    </div>
+    <div class="form-group">
+        <label asp-for="Notes"></label>
+        <input asp-for="Notes" class="form-control" placeholder="Optional notes" />
+    </div>
+    <button type="submit" class="btn btn-primary">Create Reserve Account</button>
+    <a asp-action="Expenses" class="btn btn-secondary">Cancel</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

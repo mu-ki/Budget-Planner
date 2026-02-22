@@ -1,0 +1,86 @@
+@model IEnumerable<BudgetPlanner.Web.Models.Income>
+@{
+    ViewData["Title"] = "Incomes";
+    var year = (int)ViewBag.Year;
+    var month = (int)ViewBag.Month;
+    var monthName = (string)ViewBag.MonthName;
+    var total = (decimal)ViewBag.Total;
+    var prevMonth = month == 1 ? 12 : month - 1;
+    var prevYear = month == 1 ? year - 1 : year;
+    var nextMonth = month == 12 ? 1 : month + 1;
+    var nextYear = month == 12 ? year + 1 : year;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Income - @monthName @year</h1>
+    <div class="btn-group">
+        <a asp-action="Incomes" asp-route-year="@prevYear" asp-route-month="@prevMonth" class="btn btn-outline-secondary">← Previous</a>
+        <span class="btn btn-secondary disabled">@monthName @year</span>
+        <a asp-action="Incomes" asp-route-year="@nextYear" asp-route-month="@nextMonth" class="btn btn-outline-secondary">Next →</a>
+    </div>
+</div>
+
+<p>
+    <a asp-action="AddIncome" class="btn btn-success">Add One-time Income</a>
+    <a asp-action="AddRecurringIncome" class="btn btn-outline-success">Add Recurring Income</a>
+    <a asp-action="RecurringIncomes" class="btn btn-outline-secondary">Manage Recurring</a>
+    <a asp-action="Dashboard" class="btn btn-secondary">Back to Dashboard</a>
+</p>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <strong>Total Income for @monthName @year:</strong> <span class="text-success font-weight-bold">@total.ToString("C")</span>
+        <span class="text-muted">(includes one-time + recurring)</span>
+    </div>
+</div>
+@{
+    var recurringList = ViewBag.RecurringIncomes as IEnumerable<BudgetPlanner.Web.Models.RecurringIncome>;
+    if (recurringList != null && recurringList.Any())
+    {
+        <div class="card mb-3 border-success">
+            <div class="card-header bg-light"><strong>Recurring Income</strong> (included automatically)</div>
+            <div class="card-body py-2">
+                <ul class="mb-0 list-unstyled">
+                    @foreach (var r in recurringList)
+                    {
+                        <li>@r.Description – @r.Amount.ToString("C") @(r.IntervalMonths == 1 ? "/month" : "/year")</li>
+                    }
+                </ul>
+            </div>
+        </div>
+    }
+}
+
+<h5>One-time Income for @monthName @year</h5>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Description</th>
+            <th>Amount</th>
+            <th>Date</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Description</td>
+                <td class="text-success">@item.Amount.ToString("C")</td>
+                <td>@item.IncomeDate.ToString("yyyy-MM-dd")</td>
+                <td>
+                    <a asp-action="EditIncome" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+                    <form asp-action="DeleteIncome" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Delete this income?');">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@if (!Model.Any())
+{
+    <p class="text-muted">No one-time income for @monthName @year. <a asp-action="AddIncome">Add one-time income</a> or <a asp-action="AddRecurringIncome">add recurring income</a> (e.g. salary).</p>
+}

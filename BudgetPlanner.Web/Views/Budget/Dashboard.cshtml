@@ -1,0 +1,104 @@
+@{
+    ViewData["Title"] = "Dashboard";
+    var year = (int)ViewBag.Year;
+    var month = (int)ViewBag.Month;
+    var monthName = (string)ViewBag.MonthName;
+    var totalIncome = (decimal)ViewBag.TotalIncome;
+    var totalExpenses = (decimal)ViewBag.TotalExpenses;
+    var netBalance = (decimal)ViewBag.NetBalance;
+    var moveToSavings = (decimal)(ViewBag.MoveToSavings ?? 0m);
+    var chitPayment = (decimal)(ViewBag.ChitPaymentThisMonth ?? 0m);
+    var chitAllocation = (decimal)(ViewBag.ChitAllocationThisMonth ?? 0m);
+    var prevMonth = month == 1 ? 12 : month - 1;
+    var prevYear = month == 1 ? year - 1 : year;
+    var nextMonth = month == 12 ? 1 : month + 1;
+    var nextYear = month == 12 ? year + 1 : year;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Dashboard</h1>
+    <div class="btn-group">
+        <a asp-action="Dashboard" asp-route-year="@prevYear" asp-route-month="@prevMonth" class="btn btn-outline-secondary">← Previous</a>
+        <span class="btn btn-secondary disabled">@monthName @year</span>
+        <a asp-action="Dashboard" asp-route-year="@nextYear" asp-route-month="@nextMonth" class="btn btn-outline-secondary">Next →</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4 mb-3">
+        <div class="card border-success">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Salary / Income</h5>
+            </div>
+            <div class="card-body">
+                <h3 class="text-success">@totalIncome.ToString("C")</h3>
+                <a asp-action="Incomes" asp-route-year="@year" asp-route-month="@month" class="btn btn-sm btn-outline-success">View Incomes</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">Move to Savings & Pay</h5>
+            </div>
+            <div class="card-body">
+                <h3 class="text-danger">@moveToSavings.ToString("C")</h3>
+                <small class="text-muted">Monthly bills – move to savings account & pay</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card @(netBalance >= 0 ? "border-primary" : "border-warning")">
+            <div class="card-header @(netBalance >= 0 ? "bg-primary" : "bg-warning") text-white">
+                <h5 class="mb-0">Balance in Bank</h5>
+            </div>
+            <div class="card-body">
+                <h3 class="@(netBalance >= 0 ? "text-primary" : "text-warning")">@netBalance.ToString("C")</h3>
+                <small class="text-muted">After all allocations (salary – expenses)</small>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-6 mb-3">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">Chit Due – Pay from Bank Account</h6>
+            </div>
+            <div class="card-body py-2">
+                <h5 class="text-info mb-0">@chitPayment.ToString("C")</h5>
+                <small class="text-muted">Chits due this month – pay from bank account</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-3">
+        <div class="card border-secondary">
+            <div class="card-header bg-secondary text-white">
+                <h6 class="mb-0">Chit – Keep in Bank Account</h6>
+            </div>
+            <div class="card-body py-2">
+                <h5 class="text-secondary mb-0">@chitAllocation.ToString("C")</h5>
+                <small class="text-muted">Allocate & accumulate – pay when chit term comes</small>
+            </div>
+        </div>
+    </div>
+</div>
+<p>
+    <a asp-action="MonthlyBreakdown" asp-route-year="@year" asp-route-month="@month" class="btn btn-info">View Full Breakdown</a>
+    <a asp-action="Expenses" class="btn btn-outline-secondary">Manage Expenses</a>
+</p>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <a asp-action="AddIncome" class="btn btn-success mr-2">Add Income</a>
+                <a asp-action="AddExpense" class="btn btn-danger mr-2">Add Expense</a>
+                <a asp-action="MonthlyBreakdown" asp-route-year="@year" asp-route-month="@month" class="btn btn-info">View Monthly Breakdown</a>
+            </div>
+        </div>
+    </div>
+</div>

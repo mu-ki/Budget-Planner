@@ -1,0 +1,71 @@
+@model IEnumerable<BudgetPlanner.Web.Models.Expense>
+@{
+    ViewData["Title"] = "Expenses";
+    var idsWithReserve = ViewBag.ExpenseIdsWithReserve as HashSet<int> ?? new HashSet<int>();
+    var expenseToReserve = ViewBag.ExpenseIdToReserveId as Dictionary<int, int> ?? new Dictionary<int, int>();
+}
+
+<h1>Expenses</h1>
+
+<p>
+    <a asp-action="AddExpense" class="btn btn-danger">Add Expense</a>
+    <a asp-action="Dashboard" class="btn btn-secondary">Back to Dashboard</a>
+</p>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Description</th>
+            <th>Amount</th>
+            <th>Type</th>
+            <th>Interval</th>
+            <th>Start Date</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Description</td>
+                <td class="text-danger">@item.Amount.ToString("C")</td>
+                <td>
+                    @if (item.Type == BudgetPlanner.Web.Models.ExpenseType.Monthly)
+                    {
+                        <span class="badge badge-primary">Monthly Bill</span>
+                    }
+                    else if (item.IntervalMonths == 12)
+                    {
+                        <span class="badge badge-info">Yearly Bill</span>
+                    }
+                    else
+                    {
+                        <span class="badge badge-info">Every @item.IntervalMonths months</span>
+                    }
+                </td>
+                <td>@(item.Type == BudgetPlanner.Web.Models.ExpenseType.Monthly ? "Monthly" : item.IntervalMonths == 12 ? "Yearly" : $"Every {item.IntervalMonths} months")</td>
+                <td>@item.StartDate.ToString("yyyy-MM-dd")</td>
+                <td>
+                    @if (idsWithReserve.Contains(item.Id) && expenseToReserve.ContainsKey(item.Id))
+                    {
+                        <a asp-action="ReserveAccountDetail" asp-route-id="@expenseToReserve[item.Id]" class="btn btn-sm btn-success">Reserve</a>
+                    }
+                    else
+                    {
+                        <a asp-action="CreateReserve" asp-route-expenseId="@item.Id" class="btn btn-sm btn-outline-success">Create Reserve</a>
+                    }
+                    <a asp-action="EditExpense" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+                    <form asp-action="DeleteExpense" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Delete this expense?');">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@if (!Model.Any())
+{
+    <p class="text-muted">No expenses defined. <a asp-action="AddExpense">Add your first expense</a>.</p>
+}

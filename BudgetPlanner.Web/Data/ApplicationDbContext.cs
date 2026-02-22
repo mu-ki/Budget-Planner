@@ -1,0 +1,63 @@
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+using BudgetPlanner.Web.Models;
+
+namespace BudgetPlanner.Web.Data
+{
+    public class ApplicationDbContext : IdentityDbContext
+    {
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+            : base(options)
+        {
+        }
+
+        public DbSet<Income> Incomes { get; set; }
+        public DbSet<RecurringIncome> RecurringIncomes { get; set; }
+        public DbSet<Expense> Expenses { get; set; }
+        public DbSet<ReserveAccount> ReserveAccounts { get; set; }
+        public DbSet<ReserveAllocation> ReserveAllocations { get; set; }
+        public DbSet<ReservePayment> ReservePayments { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            base.OnModelCreating(builder);
+
+            builder.Entity<Income>()
+                .HasIndex(i => i.UserId);
+            builder.Entity<Income>()
+                .HasIndex(i => i.IncomeDate);
+
+            builder.Entity<RecurringIncome>()
+                .HasIndex(r => r.UserId);
+
+            builder.Entity<Expense>()
+                .HasIndex(e => e.UserId);
+            builder.Entity<Expense>()
+                .HasIndex(e => e.StartDate);
+
+            builder.Entity<ReserveAccount>()
+                .HasIndex(r => r.UserId);
+            builder.Entity<ReserveAccount>()
+                .HasOne(r => r.Expense)
+                .WithMany()
+                .HasForeignKey(r => r.ExpenseId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<ReserveAllocation>()
+                .HasIndex(a => a.ReserveAccountId);
+            builder.Entity<ReserveAllocation>()
+                .HasOne(a => a.ReserveAccount)
+                .WithMany()
+                .HasForeignKey(a => a.ReserveAccountId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<ReservePayment>()
+                .HasIndex(p => p.ReserveAccountId);
+            builder.Entity<ReservePayment>()
+                .HasOne(p => p.ReserveAccount)
+                .WithMany()
+                .HasForeignKey(p => p.ReserveAccountId)
+                .OnDelete(DeleteBehavior.Cascade);
+        }
+    }
+}

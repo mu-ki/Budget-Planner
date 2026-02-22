@@ -1,0 +1,49 @@
+@model IEnumerable<BudgetPlanner.Web.Models.RecurringIncome>
+@{
+    ViewData["Title"] = "Recurring Income";
+}
+
+<h1>Recurring Income</h1>
+
+<p>
+    <a asp-action="AddRecurringIncome" class="btn btn-success">Add Recurring Income</a>
+    <a asp-action="Incomes" class="btn btn-secondary">One-time Income</a>
+    <a asp-action="Dashboard" class="btn btn-outline-secondary">Dashboard</a>
+</p>
+
+<p class="text-muted">Recurring income (e.g. salary) is included automatically every month. Yearly income is included once per year.</p>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Description</th>
+            <th>Amount</th>
+            <th>Frequency</th>
+            <th>Start Date</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Description</td>
+                <td class="text-success">@item.Amount.ToString("C")</td>
+                <td>@(item.IntervalMonths == 1 ? "Monthly" : "Yearly")</td>
+                <td>@item.StartDate.ToString("yyyy-MM-dd")</td>
+                <td>
+                    <a asp-action="EditRecurringIncome" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+                    <form asp-action="DeleteRecurringIncome" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Delete this recurring income?');">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@if (!Model.Any())
+{
+    <p class="text-muted">No recurring income. <a asp-action="AddRecurringIncome">Add your first recurring income</a> (e.g. salary).</p>
+}

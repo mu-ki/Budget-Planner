@@ -1,0 +1,38 @@
+# Build
+bin/
+obj/
+*.dll
+*.pdb
+*.exe
+*.user
+*.suo
+*.cache
+
+# IDE
+.vs/
+.vscode/
+*.swp
+*~
+
+# Data files
+*.pdf
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+
+# Logs
+*.log
+logs/
+
+# User secrets
+secrets.json
+
+# NuGet
+packages/
+*.nupkg
+
+# OS
+.DS_Store
+Thumbs.db
