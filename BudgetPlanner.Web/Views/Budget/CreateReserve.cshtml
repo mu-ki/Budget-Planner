@@ -1,12 +1,12 @@
 @model BudgetPlanner.Web.Models.CreateReserveViewModel
 @{
-    ViewData["Title"] = "Create Reserve Account";
+    ViewData["Title"] = "Create Chit Account";
     var expense = (BudgetPlanner.Web.Models.Expense)ViewBag.Expense;
 }
 
-<h1>Create Reserve Account</h1>
+<h1>Create Chit Account</h1>
 
-<p>Create a sinking fund for <strong>@expense.Description</strong> (Amount: @expense.Amount.ToString("C"), @(expense.Type == BudgetPlanner.Web.Models.ExpenseType.Monthly ? "Monthly" : expense.Type == BudgetPlanner.Web.Models.ExpenseType.Chit ? $"Chit ({expense.IntervalMonths} months)" : expense.IntervalMonths == 12 ? "Yearly" : $"Every {expense.IntervalMonths} months")).</p>
+<p>Create a chit account (sinking fund) for <strong>@expense.Description</strong> (Amount: @expense.Amount.ToString("C"), @(expense.Type == BudgetPlanner.Web.Models.ExpenseType.Monthly ? "Monthly" : expense.Type == BudgetPlanner.Web.Models.ExpenseType.Chit ? $"Chit ({expense.IntervalMonths} months)" : expense.IntervalMonths == 12 ? "Yearly" : $"Every {expense.IntervalMonths} months")).</p>
 
 <form asp-action="CreateReserve" method="post">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
@@ -14,7 +14,7 @@
     <div class="form-group">
         <label asp-for="StartDate"></label>
         <input asp-for="StartDate" type="date" class="form-control" />
-        <small class="form-text text-muted">When this reserve obligation starts.</small>
+        <small class="form-text text-muted">When this chit obligation starts.</small>
     </div>
     <div class="form-group">
         <label asp-for="TotalAmount"></label>
@@ -30,7 +30,7 @@
         <label asp-for="Notes"></label>
         <input asp-for="Notes" class="form-control" placeholder="Optional notes" />
     </div>
-    <button type="submit" class="btn btn-primary">Create Reserve Account</button>
+    <button type="submit" class="btn btn-primary">Create Chit Account</button>
     <a asp-action="Expenses" class="btn btn-secondary">Cancel</a>
 </form>
 

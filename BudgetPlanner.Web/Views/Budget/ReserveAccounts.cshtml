@@ -1,6 +1,6 @@
 @model IEnumerable<BudgetPlanner.Web.Models.ReserveAccountViewModel>
 @{
-    ViewData["Title"] = "Reserve Accounts";
+    ViewData["Title"] = "Chit Accounts";
     var year = (int)ViewBag.Year;
     var month = (int)ViewBag.Month;
     var monthName = (string)ViewBag.MonthName;
@@ -11,7 +11,7 @@
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>Reserve Accounts</h1>
+    <h1>Chit Accounts</h1>
     <div class="btn-group">
         <a asp-action="ReserveAccounts" asp-route-year="@prevYear" asp-route-month="@prevMonth" class="btn btn-outline-secondary">← Previous</a>
         <span class="btn btn-secondary disabled">@monthName @year</span>
@@ -30,7 +30,7 @@
     var totalPaid = Model.Sum(r => r.TotalPaid);
     <div class="card mb-3">
         <div class="card-body">
-            <strong>Total across all reserve accounts:</strong>
+            <strong>Total across all chit accounts:</strong>
             <span class="font-weight-bold @(totalBalance >= 0 ? "text-primary" : "text-warning")">@totalBalance.ToString("C")</span>
             <span class="text-muted">(Saved: @totalSaved.ToString("C") · Paid: @totalPaid.ToString("C"))</span>
         </div>
@@ -40,7 +40,7 @@
 @if (!Model.Any())
 {
     <div class="alert alert-info">
-        No reserve accounts yet. Create an expense first, then use <strong>Create Reserve</strong> on the <a asp-action="Expenses">Expenses</a> page.
+        No chit accounts yet. Create an expense first, then use <strong>Create Chit Account</strong> on the <a asp-action="RecurringExpenses">Recurring Expenses</a> page.
     </div>
 }
 else

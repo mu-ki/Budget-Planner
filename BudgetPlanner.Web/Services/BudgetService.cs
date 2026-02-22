@@ -313,6 +313,34 @@ namespace BudgetPlanner.Web.Services
         }
 
         /// <summary>
+        /// Delete an allocation. Returns reserve account id if found and deleted, null otherwise.
+        /// </summary>
+        public async Task<int?> DeleteAllocation(string userId, int allocationId)
+        {
+            var a = await _context.ReserveAllocations
+                .FirstOrDefaultAsync(x => x.Id == allocationId && x.UserId == userId);
+            if (a == null) return null;
+            var reserveId = a.ReserveAccountId;
+            _context.ReserveAllocations.Remove(a);
+            await _context.SaveChangesAsync();
+            return reserveId;
+        }
+
+        /// <summary>
+        /// Delete a payment. Returns reserve account id if found and deleted, null otherwise.
+        /// </summary>
+        public async Task<int?> DeletePayment(string userId, int paymentId)
+        {
+            var p = await _context.ReservePayments
+                .FirstOrDefaultAsync(x => x.Id == paymentId && x.UserId == userId);
+            if (p == null) return null;
+            var reserveId = p.ReserveAccountId;
+            _context.ReservePayments.Remove(p);
+            await _context.SaveChangesAsync();
+            return reserveId;
+        }
+
+        /// <summary>
         /// Check if an expense already has a reserve account.
         /// </summary>
         public bool ExpenseHasReserve(string userId, int expenseId)

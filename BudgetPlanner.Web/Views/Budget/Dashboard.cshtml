@@ -64,22 +64,22 @@
     <div class="col-md-6 mb-3">
         <div class="card border-info">
             <div class="card-header bg-info text-white">
-                <h6 class="mb-0">Chit Due – Pay @(chitsUseReserves ? "from Reserve" : "from Bank Account")</h6>
+                <h6 class="mb-0">Chit Due – Pay @(chitsUseReserves ? "from Chit Account" : "from Bank Account")</h6>
             </div>
             <div class="card-body py-2">
                 <h5 class="text-info mb-0">@chitPayment.ToString("C")</h5>
-                <small class="text-muted">Chits due this month – pay @(chitsUseReserves ? "from reserve" : "from bank account")</small>
+                <small class="text-muted">Chits due this month – pay @(chitsUseReserves ? "from chit account" : "from bank account")</small>
             </div>
         </div>
     </div>
     <div class="col-md-6 mb-3">
         <div class="card border-secondary">
             <div class="card-header bg-secondary text-white">
-                <h6 class="mb-0">Chit – @(chitsUseReserves ? "Allocate to Reserve" : "Keep in Bank Account")</h6>
+                <h6 class="mb-0">Chit – @(chitsUseReserves ? "Allocate to Chit Account" : "Keep in Bank Account")</h6>
             </div>
             <div class="card-body py-2">
                 <h5 class="text-secondary mb-0">@chitAllocation.ToString("C")</h5>
-                <small class="text-muted">@(chitsUseReserves ? "Allocate to reserve – pay from reserve when chit term comes" : "Allocate & accumulate – pay when chit term comes")</small>
+                <small class="text-muted">@(chitsUseReserves ? "Allocate to chit account – pay from chit account when turn comes" : "Allocate & accumulate – pay when chit term comes")</small>
             </div>
         </div>
     </div>

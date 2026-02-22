@@ -703,6 +703,24 @@ namespace BudgetPlanner.Web.Controllers
             return RedirectToAction(nameof(ReserveAccountDetail), new { id });
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteAllocation(int id)
+        {
+            var reserveId = await _budgetService.DeleteAllocation(GetUserId(), id);
+            if (reserveId == null) return NotFound();
+            return RedirectToAction(nameof(ReserveAccountDetail), new { id = reserveId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeletePayment(int id)
+        {
+            var reserveId = await _budgetService.DeletePayment(GetUserId(), id);
+            if (reserveId == null) return NotFound();
+            return RedirectToAction(nameof(ReserveAccountDetail), new { id = reserveId });
+        }
+
         #endregion
     }
 }

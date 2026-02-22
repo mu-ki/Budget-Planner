@@ -1,6 +1,6 @@
 @model BudgetPlanner.Web.Models.ReserveAccountViewModel
 @{
-    ViewData["Title"] = "Reserve: " + Model.ExpenseDescription;
+    ViewData["Title"] = "Chit Account: " + Model.ExpenseDescription;
 }
 
 <h1>@Model.ExpenseDescription</h1>
@@ -69,6 +69,7 @@
                             <tr>
                                 <th>Date</th>
                                 <th>Amount</th>
+                                <th></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -77,6 +78,13 @@
                                 <tr>
                                     <td>@a.AllocationDate.ToString("MMM yyyy")</td>
                                     <td class="text-success">@a.Amount.ToString("C")</td>
+                                    <td>
+                                        <form asp-action="DeleteAllocation" method="post" class="d-inline" onsubmit="return confirm('Delete this allocation?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@a.Id" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                        </form>
+                                    </td>
                                 </tr>
                             }
                         </tbody>
@@ -107,6 +115,7 @@
                                 <th>Date</th>
                                 <th>Amount</th>
                                 <th>Notes</th>
+                                <th></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -116,6 +125,13 @@
                                     <td>@p.PaymentDate.ToString("dd MMM yyyy")</td>
                                     <td class="text-danger">@p.Amount.ToString("C")</td>
                                     <td class="small">@(p.Notes ?? "-")</td>
+                                    <td>
+                                        <form asp-action="DeletePayment" method="post" class="d-inline" onsubmit="return confirm('Delete this payment record?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@p.Id" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                        </form>
+                                    </td>
                                 </tr>
                             }
                         </tbody>
@@ -135,5 +151,5 @@
 </div>
 
 <p class="mt-4">
-    <a asp-action="ReserveAccounts" class="btn btn-secondary">← Back to Reserve Accounts</a>
+    <a asp-action="ReserveAccounts" class="btn btn-secondary">← Back to Chit Accounts</a>
 </p>

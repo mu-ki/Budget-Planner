@@ -23,7 +23,7 @@
     <a asp-action="Dashboard" class="btn btn-outline-secondary">Dashboard</a>
 </p>
 
-<p class="text-muted">Recurring expenses (monthly bills, yearly bills, every N months) are included automatically in your monthly breakdown. Create a reserve for sinking funds.</p>
+<p class="text-muted">Recurring expenses (monthly bills, yearly bills, chits, every N months) are included automatically in your monthly breakdown. Create a chit account to track sinking funds.</p>
 
 <table class="table table-striped">
     <thead>
@@ -65,11 +65,11 @@
                 <td>
                     @if (idsWithReserve.Contains(item.Id) && expenseToReserve.ContainsKey(item.Id))
                     {
-                        <a asp-action="ReserveAccountDetail" asp-route-id="@expenseToReserve[item.Id]" class="btn btn-sm btn-success">Reserve</a>
+                        <a asp-action="ReserveAccountDetail" asp-route-id="@expenseToReserve[item.Id]" class="btn btn-sm btn-success">Chit Account</a>
                     }
                     else
                     {
-                        <a asp-action="CreateReserve" asp-route-expenseId="@item.Id" class="btn btn-sm btn-outline-success">Create Reserve</a>
+                        <a asp-action="CreateReserve" asp-route-expenseId="@item.Id" class="btn btn-sm btn-outline-success">Create Chit Account</a>
                     }
                     <a asp-action="EditExpense" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Edit</a>
                     <form asp-action="DeleteExpense" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Delete this recurring expense?');">
