@@ -55,6 +55,66 @@
     <a asp-action="EditReserve" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Edit Start/End Date</a>
 </div>
 
+@if (Model.InstallmentSchedule.Any())
+{
+    <div class="card mb-4">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Installment Schedule (from Start to End date)</h5>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-sm table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Due Date (Actual)</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Payment Date</th>
+                        <th>Notes</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var inst in Model.InstallmentSchedule)
+                    {
+                        <tr class="@(inst.IsPaid ? "table-success" : "")">
+                            <td>@inst.Index</td>
+                            <td>@inst.DueDate.ToString("dd MMM yyyy")</td>
+                            <td class="font-weight-bold">@inst.Amount.ToString("C")</td>
+                            <td>
+                                @if (inst.IsPaid)
+                                {
+                                    <span class="badge badge-success">Paid</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-secondary">Unpaid</span>
+                                }
+                            </td>
+                            <td>@(inst.PaymentDate.HasValue ? inst.PaymentDate.Value.ToString("dd MMM yyyy") : "—")</td>
+                            <td class="small">@(inst.Notes ?? "—")</td>
+                            <td>
+                                @if (!inst.IsPaid)
+                                {
+                                    <a asp-action="AddPayment" asp-route-reserveAccountId="@Model.Id" asp-route-installmentDueDate="@inst.DueDate.ToString("yyyy-MM-dd")" asp-route-amount="@inst.Amount" class="btn btn-sm btn-success">Mark as Paid</a>
+                                }
+                                else if (inst.PaymentId.HasValue)
+                                {
+                                    <form asp-action="DeletePayment" method="post" class="d-inline" onsubmit="return confirm('Remove paid status for this installment?');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@inst.PaymentId" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Unmark</button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
 <div class="row">
     <div class="col-md-6">
         <div class="card">
@@ -112,7 +172,8 @@
                     <table class="table table-sm mb-0">
                         <thead>
                             <tr>
-                                <th>Date</th>
+                                <th>Installment Due</th>
+                                <th>Payment Date</th>
                                 <th>Amount</th>
                                 <th>Notes</th>
                                 <th></th>
@@ -122,6 +183,7 @@
                             @foreach (var p in Model.Payments.Take(20))
                             {
                                 <tr>
+                                    <td>@(p.InstallmentDueDate?.ToString("dd MMM yyyy") ?? "—")</td>
                                     <td>@p.PaymentDate.ToString("dd MMM yyyy")</td>
                                     <td class="text-danger">@p.Amount.ToString("C")</td>
                                     <td class="small">@(p.Notes ?? "-")</td>

@@ -19,6 +19,16 @@ namespace BudgetPlanner.Web.Models
         public bool IsMonthlyBill { get; set; }
         /// <summary>Display: chit due this month (pay from bank). Subset of PayNow.</summary>
         public bool IsChitDue { get; set; }
+        /// <summary>Recurring expense id (null for one-time).</summary>
+        public int? ExpenseId { get; set; }
+        /// <summary>One-time expense id (null for recurring).</summary>
+        public int? OneTimeExpenseId { get; set; }
+        /// <summary>Reserve account id if expense has a chit account (null otherwise).</summary>
+        public int? ReserveAccountId { get; set; }
+        /// <summary>Whether this item has been marked as paid for this period.</summary>
+        public bool IsPaid { get; set; }
+        /// <summary>Monthly contribution amount (for chits: Amount/IntervalMonths). Same as Amount for accumulation items.</summary>
+        public decimal ContributionAmount { get; set; }
     }
 
     public class MonthlyBreakdownViewModel

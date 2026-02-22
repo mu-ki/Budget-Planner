@@ -44,6 +44,13 @@ namespace BudgetPlanner.Web.Models
         /// </summary>
         public bool IsDueThisMonth { get; set; }
 
+        /// <summary>Next installment due date (from start + interval).</summary>
+        public DateTime? NextDueDate { get; set; }
+
+        /// <summary>Amount due when next payment falls due.</summary>
+        public decimal DueAmount => InstallmentAmount;
+
+        public List<ChitInstallmentViewModel> InstallmentSchedule { get; set; } = new List<ChitInstallmentViewModel>();
         public List<ReserveAllocationViewModel> Allocations { get; set; } = new List<ReserveAllocationViewModel>();
         public List<ReservePaymentViewModel> Payments { get; set; } = new List<ReservePaymentViewModel>();
     }
@@ -61,6 +68,19 @@ namespace BudgetPlanner.Web.Models
         public int Id { get; set; }
         public decimal Amount { get; set; }
         public DateTime PaymentDate { get; set; }
+        public DateTime? InstallmentDueDate { get; set; }
+        public string Notes { get; set; }
+    }
+
+    /// <summary>One installment in the chit schedule (from start to end date).</summary>
+    public class ChitInstallmentViewModel
+    {
+        public int Index { get; set; }
+        public DateTime DueDate { get; set; }
+        public decimal Amount { get; set; }
+        public bool IsPaid { get; set; }
+        public DateTime? PaymentDate { get; set; }
+        public int? PaymentId { get; set; }
         public string Notes { get; set; }
     }
 }

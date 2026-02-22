@@ -63,6 +63,13 @@ namespace BudgetPlanner.Web.Controllers
             ViewBag.ChitAllocationThisMonth = chitAllocation;
             ViewBag.ChitsUseReserves = chitsUseReserves;
 
+            var accounts = _context.Accounts.Where(a => a.UserId == userId).OrderBy(a => a.Type).ThenBy(a => a.Name).ToList();
+            ViewBag.SavingsAccount = accounts.FirstOrDefault(a => a.Type == AccountType.Savings);
+            ViewBag.ChitAccount = accounts.FirstOrDefault(a => a.Type == AccountType.Chit);
+            ViewBag.SalaryAccount = accounts.FirstOrDefault(a => a.Type == AccountType.Salary);
+            ViewBag.Accounts = accounts;
+            ViewBag.BreakdownItems = items;
+
             return View();
         }
 
@@ -367,11 +374,13 @@ namespace BudgetPlanner.Web.Controllers
                 recurringQuery = recurringQuery.Where(e => e.CategoryId == categoryId.Value);
             var recurringList = recurringQuery.OrderBy(e => e.Type).ThenBy(e => e.Description).ToList();
 
+            var (totalExp, breakdownItems) = _budgetService.GetMonthlyExpenseBreakdown(userId, y, m);
             ViewBag.Year = y;
             ViewBag.Month = m;
             ViewBag.MonthName = BudgetService.GetMonthName(m);
             ViewBag.RecurringExpenses = recurringList;
-            ViewBag.TotalExpenseForMonth = _budgetService.GetMonthlyExpenseBreakdown(userId, y, m).Item1;
+            ViewBag.TotalExpenseForMonth = totalExp;
+            ViewBag.BreakdownItems = breakdownItems;
             ViewBag.ExpenseCategories = new SelectList(
                 _context.Categories.Where(c => c.UserId == userId && c.Type == CategoryType.Expense).OrderBy(c => c.Name).ToList(),
                 "Id", "Name", categoryId);
@@ -468,6 +477,39 @@ namespace BudgetPlanner.Web.Controllers
             _context.OneTimeExpenses.Remove(item);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Expenses), new { year = y, month = m });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkAsPaidOneTime(int id, DateTime paidDate, int? year, int? month, string returnTo = null)
+        {
+            await _budgetService.MarkAsPaidOneTime(GetUserId(), id, paidDate);
+            var item = await _context.OneTimeExpenses.FindAsync(id);
+            var y = year ?? item?.ExpenseDate.Year ?? DateTime.Now.Year;
+            var m = month ?? item?.ExpenseDate.Month ?? DateTime.Now.Month;
+            if (returnTo == "breakdown")
+                return RedirectToAction(nameof(MonthlyBreakdown), new { year = y, month = m });
+            return RedirectToAction(nameof(Expenses), new { year = y, month = m });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkAsPaidRecurring(int expenseId, int year, int month, DateTime paidDate, decimal amount, string returnTo = null)
+        {
+            await _budgetService.MarkAsPaidRecurring(GetUserId(), expenseId, year, month, paidDate, amount);
+            if (returnTo == "breakdown")
+                return RedirectToAction(nameof(MonthlyBreakdown), new { year, month });
+            return RedirectToAction(nameof(Expenses), new { year, month });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RecordChitContribution(int expenseId, int year, int month, decimal amount, DateTime paymentDate, string returnTo = null)
+        {
+            await _budgetService.RecordChitContribution(GetUserId(), expenseId, year, month, amount, paymentDate);
+            if (returnTo == "breakdown")
+                return RedirectToAction(nameof(MonthlyBreakdown), new { year, month });
+            return RedirectToAction(nameof(Expenses), new { year, month });
         }
 
         [HttpGet]
@@ -578,6 +620,10 @@ namespace BudgetPlanner.Web.Controllers
                 Items = items
             };
 
+            var accounts = _context.Accounts.Where(a => a.UserId == userId).ToList();
+            ViewBag.SavingsAccount = accounts.FirstOrDefault(a => a.Type == AccountType.Savings);
+            ViewBag.ChitAccount = accounts.FirstOrDefault(a => a.Type == AccountType.Chit);
+
             ViewBag.Year = y;
             ViewBag.Month = m;
             return View(vm);
@@ -637,9 +683,16 @@ namespace BudgetPlanner.Web.Controllers
         }
 
         [HttpGet]
-        public IActionResult AddPayment(int reserveAccountId)
+        public IActionResult AddPayment(int reserveAccountId, DateTime? installmentDueDate = null, decimal? amount = null)
         {
-            return View(new AddPaymentViewModel { ReserveAccountId = reserveAccountId, PaymentDate = DateTime.Today });
+            var vm = new AddPaymentViewModel
+            {
+                ReserveAccountId = reserveAccountId,
+                PaymentDate = DateTime.Today,
+                InstallmentDueDate = installmentDueDate,
+                Amount = amount ?? 0
+            };
+            return View(vm);
         }
 
         [HttpPost]
@@ -648,7 +701,7 @@ namespace BudgetPlanner.Web.Controllers
         {
             if (ModelState.IsValid && model.Amount > 0)
             {
-                await _budgetService.RecordPayment(GetUserId(), model.ReserveAccountId, model.Amount, model.PaymentDate, model.Notes);
+                await _budgetService.RecordPayment(GetUserId(), model.ReserveAccountId, model.Amount, model.PaymentDate, model.InstallmentDueDate, model.Notes);
                 return RedirectToAction(nameof(ReserveAccountDetail), new { id = model.ReserveAccountId });
             }
             return View(model);
@@ -719,6 +772,89 @@ namespace BudgetPlanner.Web.Controllers
             var reserveId = await _budgetService.DeletePayment(GetUserId(), id);
             if (reserveId == null) return NotFound();
             return RedirectToAction(nameof(ReserveAccountDetail), new { id = reserveId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteReserve(int id)
+        {
+            var r = await _context.ReserveAccounts.FirstOrDefaultAsync(ra => ra.Id == id && ra.UserId == GetUserId());
+            if (r == null) return NotFound();
+            _context.ReserveAccounts.Remove(r);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(ReserveAccounts));
+        }
+
+        #endregion
+
+        #region Accounts
+
+        public IActionResult Accounts()
+        {
+            var list = _context.Accounts
+                .Where(a => a.UserId == GetUserId())
+                .OrderBy(a => a.Type)
+                .ThenBy(a => a.Name)
+                .ToList();
+            return View(list);
+        }
+
+        [HttpGet]
+        public IActionResult AddAccount()
+        {
+            return View(new Account());
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddAccount(Account model)
+        {
+            if (ModelState.IsValid)
+            {
+                model.UserId = GetUserId();
+                _context.Accounts.Add(model);
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Accounts));
+            }
+            return View(model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> EditAccount(int id)
+        {
+            var item = await _context.Accounts.FirstOrDefaultAsync(a => a.Id == id && a.UserId == GetUserId());
+            if (item == null) return NotFound();
+            return View(item);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditAccount(int id, Account model)
+        {
+            if (id != model.Id) return NotFound();
+            var item = await _context.Accounts.FirstOrDefaultAsync(a => a.Id == id && a.UserId == GetUserId());
+            if (item == null) return NotFound();
+            if (ModelState.IsValid)
+            {
+                item.Name = model.Name;
+                item.Type = model.Type;
+                item.BankName = model.BankName;
+                item.Balance = model.Balance;
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Accounts));
+            }
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteAccount(int id)
+        {
+            var item = await _context.Accounts.FirstOrDefaultAsync(a => a.Id == id && a.UserId == GetUserId());
+            if (item == null) return NotFound();
+            _context.Accounts.Remove(item);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Accounts));
         }
 
         #endregion

@@ -25,6 +25,11 @@ namespace BudgetPlanner.Web.Models
         [Display(Name = "Payment Date")]
         public DateTime PaymentDate { get; set; }
 
+        /// <summary>Due date of the installment this payment satisfies. Used to link payment to schedule.</summary>
+        [DataType(DataType.Date)]
+        [Display(Name = "Installment Due Date")]
+        public DateTime? InstallmentDueDate { get; set; }
+
         [StringLength(200)]
         public string Notes { get; set; }
     }

@@ -1,0 +1,112 @@
+@model IEnumerable<BudgetPlanner.Web.Models.Account>
+@{
+    ViewData["Title"] = "Accounts";
+}
+
+<h1>Accounts</h1>
+
+<p>
+    <a asp-action="AddAccount" class="btn btn-primary">Add Account</a>
+    <a asp-action="Dashboard" class="btn btn-secondary">Back to Dashboard</a>
+</p>
+
+<p class="text-muted">Track where your money flows. Salary = where income lands (e.g. HDFC). Savings = general savings (e.g. SBI). Chit = chit fund account (e.g. Amma SBI).</p>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header bg-success text-white"><strong>Salary</strong></div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <tbody>
+                        @foreach (var a in Model.Where(x => x.Type == BudgetPlanner.Web.Models.AccountType.Salary))
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@a.Name</strong>
+                                    @if (!string.IsNullOrEmpty(a.BankName)) { <span class="text-muted small">(@a.BankName)</span> }
+                                    <br /><span class="text-success small">@a.Balance.ToString("C")</span>
+                                </td>
+                                <td class="text-right">
+                                    <a asp-action="EditAccount" asp-route-id="@a.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+                                    <form asp-action="DeleteAccount" asp-route-id="@a.Id" method="post" class="d-inline" onsubmit="return confirm('Delete this account?');">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                @if (!Model.Any(x => x.Type == BudgetPlanner.Web.Models.AccountType.Salary))
+                {
+                    <p class="text-muted p-3 mb-0">No salary account. <a asp-action="AddAccount">Add one</a>.</p>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header bg-primary text-white"><strong>Savings</strong></div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <tbody>
+                        @foreach (var a in Model.Where(x => x.Type == BudgetPlanner.Web.Models.AccountType.Savings))
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@a.Name</strong>
+                                    @if (!string.IsNullOrEmpty(a.BankName)) { <span class="text-muted small">(@a.BankName)</span> }
+                                    <br /><span class="text-success small">@a.Balance.ToString("C")</span>
+                                </td>
+                                <td class="text-right">
+                                    <a asp-action="EditAccount" asp-route-id="@a.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+                                    <form asp-action="DeleteAccount" asp-route-id="@a.Id" method="post" class="d-inline" onsubmit="return confirm('Delete this account?');">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                @if (!Model.Any(x => x.Type == BudgetPlanner.Web.Models.AccountType.Savings))
+                {
+                    <p class="text-muted p-3 mb-0">No savings account. <a asp-action="AddAccount">Add one</a>.</p>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header bg-warning text-dark"><strong>Chit</strong></div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <tbody>
+                        @foreach (var a in Model.Where(x => x.Type == BudgetPlanner.Web.Models.AccountType.Chit))
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@a.Name</strong>
+                                    @if (!string.IsNullOrEmpty(a.BankName)) { <span class="text-muted small">(@a.BankName)</span> }
+                                    <br /><span class="text-success small">@a.Balance.ToString("C")</span>
+                                </td>
+                                <td class="text-right">
+                                    <a asp-action="EditAccount" asp-route-id="@a.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+                                    <form asp-action="DeleteAccount" asp-route-id="@a.Id" method="post" class="d-inline" onsubmit="return confirm('Delete this account?');">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                @if (!Model.Any(x => x.Type == BudgetPlanner.Web.Models.AccountType.Chit))
+                {
+                    <p class="text-muted p-3 mb-0">No chit account. <a asp-action="AddAccount">Add one</a>.</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>

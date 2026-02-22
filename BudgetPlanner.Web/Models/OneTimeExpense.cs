@@ -27,6 +27,10 @@ namespace BudgetPlanner.Web.Models
         public int? CategoryId { get; set; }
         public Category Category { get; set; }
 
+        /// <summary>When this expense was marked as paid (null = not paid).</summary>
+        [DataType(DataType.Date)]
+        public DateTime? PaidDate { get; set; }
+
         public string UserId { get; set; }
     }
 }

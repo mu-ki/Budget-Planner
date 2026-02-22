@@ -16,9 +16,11 @@ namespace BudgetPlanner.Web.Data
         public DbSet<Expense> Expenses { get; set; }
         public DbSet<OneTimeExpense> OneTimeExpenses { get; set; }
         public DbSet<Category> Categories { get; set; }
+        public DbSet<Account> Accounts { get; set; }
         public DbSet<ReserveAccount> ReserveAccounts { get; set; }
         public DbSet<ReserveAllocation> ReserveAllocations { get; set; }
         public DbSet<ReservePayment> ReservePayments { get; set; }
+        public DbSet<ExpensePayment> ExpensePayments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -67,6 +69,9 @@ namespace BudgetPlanner.Web.Data
             builder.Entity<Category>()
                 .HasIndex(c => new { c.UserId, c.Type });
 
+            builder.Entity<Account>()
+                .HasIndex(a => a.UserId);
+
             builder.Entity<ReserveAccount>()
                 .HasIndex(r => r.UserId);
             builder.Entity<ReserveAccount>()
@@ -89,6 +94,16 @@ namespace BudgetPlanner.Web.Data
                 .HasOne(p => p.ReserveAccount)
                 .WithMany()
                 .HasForeignKey(p => p.ReserveAccountId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<ExpensePayment>()
+                .HasIndex(p => p.UserId);
+            builder.Entity<ExpensePayment>()
+                .HasIndex(p => new { p.ExpenseId, p.PeriodYear, p.PeriodMonth });
+            builder.Entity<ExpensePayment>()
+                .HasOne(p => p.Expense)
+                .WithMany()
+                .HasForeignKey(p => p.ExpenseId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

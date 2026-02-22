@@ -105,9 +105,35 @@ namespace BudgetPlanner.Web
                 db.Database.ExecuteSqlRaw("ALTER TABLE \"" + table + "\" ADD COLUMN \"" + column + "\" " + type);
         }
 
+        private static void EnsureAccountsTableExists(ApplicationDbContext db)
+        {
+            try
+            {
+                db.Database.ExecuteSqlRaw(@"CREATE TABLE IF NOT EXISTS ""Accounts"" (
+                    ""Id"" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                    ""Name"" TEXT NOT NULL,
+                    ""Type"" INTEGER NOT NULL,
+                    ""BankName"" TEXT,
+                    ""UserId"" TEXT
+                )");
+                db.Database.ExecuteSqlRaw(@"CREATE INDEX IF NOT EXISTS ""IX_Accounts_UserId"" ON ""Accounts"" (""UserId"")");
+            }
+            catch { }
+        }
+
         private static void EnsureReserveStartDateColumn(ApplicationDbContext db)
         {
             AddColumnIfNotExists(db, "ReserveAccounts", "StartDate", "TEXT");
+        }
+
+        private static void EnsureReservePaymentColumnsExist(ApplicationDbContext db)
+        {
+            AddColumnIfNotExists(db, "ReservePayments", "InstallmentDueDate", "TEXT");
+        }
+
+        private static void EnsureAccountColumnsExist(ApplicationDbContext db)
+        {
+            AddColumnIfNotExists(db, "Accounts", "Balance", "REAL DEFAULT 0");
         }
 
         private static void EnsureCategoryColumnsExist(ApplicationDbContext db)
@@ -116,6 +142,33 @@ namespace BudgetPlanner.Web
             AddColumnIfNotExists(db, "RecurringIncomes", "CategoryId", "INTEGER");
             AddColumnIfNotExists(db, "Expenses", "CategoryId", "INTEGER");
             AddColumnIfNotExists(db, "OneTimeExpenses", "CategoryId", "INTEGER");
+        }
+
+        private static void EnsureExpensePaymentTableExists(ApplicationDbContext db)
+        {
+            try
+            {
+                db.Database.ExecuteSqlRaw(@"CREATE TABLE IF NOT EXISTS ""ExpensePayments"" (
+                    ""Id"" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                    ""ExpenseId"" INTEGER NOT NULL,
+                    ""PeriodYear"" INTEGER NOT NULL,
+                    ""PeriodMonth"" INTEGER NOT NULL,
+                    ""PaidDate"" TEXT NOT NULL,
+                    ""Amount"" REAL NOT NULL,
+                    ""Type"" INTEGER NOT NULL,
+                    ""Notes"" TEXT,
+                    ""UserId"" TEXT,
+                    FOREIGN KEY(""ExpenseId"") REFERENCES ""Expenses""(""Id"") ON DELETE CASCADE
+                )");
+                db.Database.ExecuteSqlRaw(@"CREATE INDEX IF NOT EXISTS ""IX_ExpensePayments_UserId"" ON ""ExpensePayments"" (""UserId"")");
+                db.Database.ExecuteSqlRaw(@"CREATE INDEX IF NOT EXISTS ""IX_ExpensePayments_ExpenseId_Period"" ON ""ExpensePayments"" (""ExpenseId"", ""PeriodYear"", ""PeriodMonth"")");
+            }
+            catch { }
+        }
+
+        private static void EnsureOneTimeExpensePaidDate(ApplicationDbContext db)
+        {
+            AddColumnIfNotExists(db, "OneTimeExpenses", "PaidDate", "TEXT");
         }
 
         public static void Main(string[] args)
@@ -134,7 +187,12 @@ namespace BudgetPlanner.Web
                 }
                 EnsureReserveTablesExist(db);
                 EnsureReserveStartDateColumn(db);
+                EnsureReservePaymentColumnsExist(db);
+                EnsureAccountsTableExists(db);
+                EnsureAccountColumnsExist(db);
                 EnsureCategoryColumnsExist(db);
+                EnsureExpensePaymentTableExists(db);
+                EnsureOneTimeExpensePaidDate(db);
             }
             host.Run();
         }

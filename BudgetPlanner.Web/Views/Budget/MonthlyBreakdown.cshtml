@@ -3,6 +3,8 @@
     ViewData["Title"] = "Monthly Breakdown";
     var year = (int)ViewBag.Year;
     var month = (int)ViewBag.Month;
+    var savingsAccount = ViewBag.SavingsAccount as BudgetPlanner.Web.Models.Account;
+    var chitAccount = ViewBag.ChitAccount as BudgetPlanner.Web.Models.Account;
     var prevMonth = month == 1 ? 12 : month - 1;
     var prevYear = month == 1 ? year - 1 : year;
     var nextMonth = month == 12 ? 1 : month + 1;
@@ -12,7 +14,10 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>Monthly Breakdown - @Model.MonthName @Model.Year</h1>
     <div class="btn-group">
-        <a asp-action="MonthlyBreakdown" asp-route-year="@prevYear" asp-route-month="@prevMonth" class="btn btn-outline-secondary">← Previous</a>
+        @if (year > 2026 || month > 1)
+        {
+            <a asp-action="MonthlyBreakdown" asp-route-year="@prevYear" asp-route-month="@prevMonth" class="btn btn-outline-secondary">← Previous</a>
+        }
         <span class="btn btn-secondary disabled">@Model.MonthName @Model.Year</span>
         <a asp-action="MonthlyBreakdown" asp-route-year="@nextYear" asp-route-month="@nextMonth" class="btn btn-outline-secondary">Next →</a>
     </div>
@@ -49,10 +54,10 @@
 
 <div class="card mb-3">
     <div class="card-header bg-danger text-white">
-        <h5 class="mb-0">Move to Savings & Pay – @Model.MoveToSavings.ToString("C")</h5>
+        <h5 class="mb-0">Move to @(savingsAccount?.Name ?? "Savings") & Pay – @Model.MoveToSavings.ToString("C")</h5>
     </div>
     <div class="card-body">
-        <p class="text-muted small mb-2">Monthly bills and yearly when due – move to savings account and pay.</p>
+        <p class="text-muted small mb-2">Monthly bills and yearly when due – move to @(savingsAccount?.Name ?? "savings") and pay.</p>
         <table class="table table-sm table-hover">
             <tbody>
                 @foreach (var item in Model.Items.Where(i => i.IsMonthlyBill))
@@ -61,6 +66,35 @@
                         <td>@item.ExpenseDescription</td>
                         <td class="text-danger font-weight-bold text-right">@item.Amount.ToString("C")</td>
                         <td class="text-muted small">@item.Notes</td>
+                        <td>
+                            @if (item.IsPaid)
+                            { <span class="badge badge-success">Paid</span> }
+                            else if (item.OneTimeExpenseId.HasValue)
+                            {
+                                <form asp-action="MarkAsPaidOneTime" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@item.OneTimeExpenseId" />
+                                    <input type="hidden" name="paidDate" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                                    <input type="hidden" name="year" value="@Model.Year" />
+                                    <input type="hidden" name="month" value="@Model.Month" />
+                                    <input type="hidden" name="returnTo" value="breakdown" />
+                                    <button type="submit" class="btn btn-sm btn-success">Mark as Paid</button>
+                                </form>
+                            }
+                            else if (item.ExpenseId.HasValue)
+                            {
+                                <form asp-action="MarkAsPaidRecurring" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="expenseId" value="@item.ExpenseId" />
+                                    <input type="hidden" name="year" value="@Model.Year" />
+                                    <input type="hidden" name="month" value="@Model.Month" />
+                                    <input type="hidden" name="paidDate" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                                    <input type="hidden" name="amount" value="@item.Amount" />
+                                    <input type="hidden" name="returnTo" value="breakdown" />
+                                    <button type="submit" class="btn btn-sm btn-success">Mark as Paid</button>
+                                </form>
+                            }
+                        </td>
                     </tr>
                 }
             </tbody>
@@ -73,18 +107,41 @@
 </div>
 <div class="card mb-3">
     <div class="card-header bg-info text-white">
-        <h5 class="mb-0">Chit Due – Pay from Bank Account – @Model.ChitPaymentThisMonth.ToString("C")</h5>
+        <h5 class="mb-0">Chit Due – Pay from @(chitAccount?.Name ?? "Bank Account") – @Model.ChitPaymentThisMonth.ToString("C")</h5>
     </div>
     <div class="card-body">
-        <p class="text-muted small mb-2">Chits due this month – pay from your bank account.</p>
+        <p class="text-muted small mb-2">Chits due this month – pay from @(chitAccount?.Name ?? "your bank account").</p>
         <table class="table table-sm table-hover">
             <tbody>
                 @foreach (var item in Model.Items.Where(i => i.IsChitDue))
                 {
                     <tr>
-                        <td>@item.ExpenseDescription</td>
+                        <td>
+                            @item.ExpenseDescription
+                            @if (item.Amount != item.ContributionAmount)
+                            {
+                                <span class="text-muted small">(contribution @item.ContributionAmount.ToString("C"))</span>
+                            }
+                        </td>
                         <td class="text-danger font-weight-bold text-right">@item.Amount.ToString("C")</td>
                         <td class="text-muted small">@item.Notes</td>
+                        <td>
+                            @if (item.IsPaid)
+                            { <span class="badge badge-success">Transferred</span> }
+                            else if (item.ExpenseId.HasValue)
+                            {
+                                <form asp-action="RecordChitContribution" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="expenseId" value="@item.ExpenseId" />
+                                    <input type="hidden" name="year" value="@Model.Year" />
+                                    <input type="hidden" name="month" value="@Model.Month" />
+                                    <input type="hidden" name="amount" value="@item.ContributionAmount" />
+                                    <input type="hidden" name="paymentDate" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                                    <input type="hidden" name="returnTo" value="breakdown" />
+                                    <button type="submit" class="btn btn-sm btn-info">Transfer @item.ContributionAmount.ToString("C")</button>
+                                </form>
+                            }
+                        </td>
                     </tr>
                 }
             </tbody>
@@ -97,18 +154,35 @@
 </div>
 <div class="card mb-3">
     <div class="card-header bg-secondary text-white">
-        <h5 class="mb-0">Chit – Keep in Bank Account & Accumulate – @Model.ChitAllocationThisMonth.ToString("C")</h5>
+        <h5 class="mb-0">Chit – Keep in @(chitAccount?.Name ?? "Bank") & Accumulate – @Model.ChitAllocationThisMonth.ToString("C")</h5>
     </div>
     <div class="card-body">
-        <p class="text-muted small mb-2">Chits not due – keep in bank account, accumulate, pay when term comes.</p>
+        <p class="text-muted small mb-2">Chits not due – keep in @(chitAccount?.Name ?? "bank"), accumulate, pay when term comes.</p>
         <table class="table table-sm table-hover">
             <tbody>
                 @foreach (var item in Model.Items.Where(i => !i.IsMonthlyBill && !i.IsChitDue))
                 {
                     <tr>
                         <td>@item.ExpenseDescription</td>
-                        <td class="text-secondary font-weight-bold text-right">@item.Amount.ToString("C")</td>
+                        <td class="text-secondary font-weight-bold text-right">@item.ContributionAmount.ToString("C")</td>
                         <td class="text-muted small">@item.Notes</td>
+                        <td>
+                            @if (item.IsPaid)
+                            { <span class="badge badge-success">Transferred</span> }
+                            else if (item.ExpenseId.HasValue && item.Type == BudgetPlanner.Web.Models.ExpenseType.Chit)
+                            {
+                                <form asp-action="RecordChitContribution" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="expenseId" value="@item.ExpenseId" />
+                                    <input type="hidden" name="year" value="@Model.Year" />
+                                    <input type="hidden" name="month" value="@Model.Month" />
+                                    <input type="hidden" name="amount" value="@item.ContributionAmount" />
+                                    <input type="hidden" name="paymentDate" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                                    <input type="hidden" name="returnTo" value="breakdown" />
+                                    <button type="submit" class="btn btn-sm btn-info">Transfer @item.ContributionAmount.ToString("C")</button>
+                                </form>
+                            }
+                        </td>
                     </tr>
                 }
             </tbody>

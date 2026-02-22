@@ -1,0 +1,38 @@
+@model BudgetPlanner.Web.Models.Account
+@{
+    ViewData["Title"] = "Edit Account";
+}
+
+<h1>Edit Account</h1>
+
+<form asp-action="EditAccount" method="post">
+    <input type="hidden" asp-for="Id" />
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="form-group">
+        <label asp-for="Name"></label>
+        <input asp-for="Name" class="form-control" />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="BankName"></label>
+        <input asp-for="BankName" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label asp-for="Balance"></label>
+        <input asp-for="Balance" type="number" step="0.01" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label asp-for="Type"></label>
+        <select asp-for="Type" class="form-control">
+            <option value="0">Salary – where income lands</option>
+            <option value="1">Savings – general savings</option>
+            <option value="2">Chit – chit fund account</option>
+        </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a asp-action="Accounts" class="btn btn-secondary">Cancel</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

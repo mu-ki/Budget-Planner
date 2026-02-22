@@ -9,85 +9,193 @@
     var moveToSavings = (decimal)(ViewBag.MoveToSavings ?? 0m);
     var chitPayment = (decimal)(ViewBag.ChitPaymentThisMonth ?? 0m);
     var chitAllocation = (decimal)(ViewBag.ChitAllocationThisMonth ?? 0m);
-    var chitsUseReserves = (bool)(ViewBag.ChitsUseReserves ?? false);
+    var savingsAccount = ViewBag.SavingsAccount as BudgetPlanner.Web.Models.Account;
+    var chitAccount = ViewBag.ChitAccount as BudgetPlanner.Web.Models.Account;
+    var salaryAccount = ViewBag.SalaryAccount as BudgetPlanner.Web.Models.Account;
+    var breakdownItems = ViewBag.BreakdownItems as IEnumerable<BudgetPlanner.Web.Models.MonthlyBreakdownItem> ?? Enumerable.Empty<BudgetPlanner.Web.Models.MonthlyBreakdownItem>();
+    var upcomingBills = breakdownItems.Where(i => i.IsMonthlyBill).ToList();
+    var upcomingChits = breakdownItems.Where(i => i.Strategy == BudgetPlanner.Web.Models.PaymentStrategy.AccumulateInBank).ToList();
     var prevMonth = month == 1 ? 12 : month - 1;
     var prevYear = month == 1 ? year - 1 : year;
     var nextMonth = month == 12 ? 1 : month + 1;
     var nextYear = month == 12 ? year + 1 : year;
+    var salaryLabel = salaryAccount != null ? salaryAccount.Name : "Salary";
+    var savingsLabel = savingsAccount != null ? savingsAccount.Name : "Savings";
+    var chitLabel = chitAccount != null ? chitAccount.Name : "Chit";
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>Dashboard</h1>
     <div class="btn-group">
-        <a asp-action="Dashboard" asp-route-year="@prevYear" asp-route-month="@prevMonth" class="btn btn-outline-secondary">← Previous</a>
+        @if (year > 2026 || month > 1)
+        {
+            <a asp-action="Dashboard" asp-route-year="@prevYear" asp-route-month="@prevMonth" class="btn btn-outline-secondary">← Previous</a>
+        }
         <span class="btn btn-secondary disabled">@monthName @year</span>
         <a asp-action="Dashboard" asp-route-year="@nextYear" asp-route-month="@nextMonth" class="btn btn-outline-secondary">Next →</a>
     </div>
 </div>
 
 <div class="row">
-    <div class="col-md-4 mb-3">
+    <div class="col-md-6 mb-3">
         <div class="card border-success">
             <div class="card-header bg-success text-white">
-                <h5 class="mb-0">Salary / Income</h5>
+                <h5 class="mb-0">Salary / Income → @salaryLabel</h5>
             </div>
             <div class="card-body">
                 <h3 class="text-success">@totalIncome.ToString("C")</h3>
-                <a asp-action="Incomes" asp-route-year="@year" asp-route-month="@month" class="btn btn-sm btn-outline-success">View Incomes</a>
+                <small class="text-muted">@(salaryAccount != null ? $"Lands in {salaryAccount.Name}" : "Add account in Budget → Accounts")</small>
+                <br />
+                <a asp-action="Incomes" asp-route-year="@year" asp-route-month="@month" class="btn btn-sm btn-outline-success mt-1">View Incomes</a>
             </div>
         </div>
     </div>
-    <div class="col-md-4 mb-3">
-        <div class="card border-danger">
-            <div class="card-header bg-danger text-white">
-                <h5 class="mb-0">Move to Savings & Pay</h5>
-            </div>
-            <div class="card-body">
-                <h3 class="text-danger">@moveToSavings.ToString("C")</h3>
-                <small class="text-muted">Monthly bills – move to savings account & pay</small>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4 mb-3">
+    <div class="col-md-6 mb-3">
         <div class="card @(netBalance >= 0 ? "border-primary" : "border-warning")">
             <div class="card-header @(netBalance >= 0 ? "bg-primary" : "bg-warning") text-white">
-                <h5 class="mb-0">Balance in Bank</h5>
+                <h5 class="mb-0">Current → @savingsLabel</h5>
             </div>
             <div class="card-body">
                 <h3 class="@(netBalance >= 0 ? "text-primary" : "text-warning")">@netBalance.ToString("C")</h3>
-                <small class="text-muted">After all allocations (salary – expenses)</small>
+                <small class="text-muted">Balance after all allocations (salary – expenses)</small>
             </div>
         </div>
     </div>
 </div>
+
 <div class="row">
+    <div class="col-md-6 mb-3">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">Upcoming Bills → @savingsLabel</h5>
+            </div>
+            <div class="card-body py-2">
+                <h5 class="text-danger mb-2">@moveToSavings.ToString("C")</h5>
+                <small class="text-muted">Move to @(savingsAccount?.Name ?? "savings") & pay</small>
+                @if (upcomingBills.Any())
+                {
+                    <ul class="list-unstyled mb-0 mt-2 small">
+                        @foreach (var item in upcomingBills)
+                        {
+                            <li class="d-flex justify-content-between align-items-center">
+                                <span>@item.ExpenseDescription: @item.Amount.ToString("C")</span>
+                                @if (item.IsPaid)
+                                { <span class="badge badge-success">Paid</span> }
+                                else if (item.OneTimeExpenseId.HasValue)
+                                {
+                                    <form asp-action="MarkAsPaidOneTime" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@item.OneTimeExpenseId" />
+                                        <input type="hidden" name="paidDate" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                                        <input type="hidden" name="year" value="@year" />
+                                        <input type="hidden" name="month" value="@month" />
+                                        <button type="submit" class="btn btn-sm btn-success">Mark as Paid</button>
+                                    </form>
+                                }
+                                else if (item.ExpenseId.HasValue)
+                                {
+                                    <form asp-action="MarkAsPaidRecurring" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="expenseId" value="@item.ExpenseId" />
+                                        <input type="hidden" name="year" value="@year" />
+                                        <input type="hidden" name="month" value="@month" />
+                                        <input type="hidden" name="paidDate" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                                        <input type="hidden" name="amount" value="@item.Amount" />
+                                        <button type="submit" class="btn btn-sm btn-success">Mark as Paid</button>
+                                    </form>
+                                }
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+    </div>
     <div class="col-md-6 mb-3">
         <div class="card border-info">
             <div class="card-header bg-info text-white">
-                <h6 class="mb-0">Chit Due – Pay @(chitsUseReserves ? "from Chit Account" : "from Bank Account")</h6>
+                <h5 class="mb-0">Chit → @chitLabel</h5>
             </div>
             <div class="card-body py-2">
-                <h5 class="text-info mb-0">@chitPayment.ToString("C")</h5>
-                <small class="text-muted">Chits due this month – pay @(chitsUseReserves ? "from chit account" : "from bank account")</small>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6 mb-3">
-        <div class="card border-secondary">
-            <div class="card-header bg-secondary text-white">
-                <h6 class="mb-0">Chit – @(chitsUseReserves ? "Allocate to Chit Account" : "Keep in Bank Account")</h6>
-            </div>
-            <div class="card-body py-2">
-                <h5 class="text-secondary mb-0">@chitAllocation.ToString("C")</h5>
-                <small class="text-muted">@(chitsUseReserves ? "Allocate to chit account – pay from chit account when turn comes" : "Allocate & accumulate – pay when chit term comes")</small>
+                <h5 class="text-info mb-1">Due this month: @chitPayment.ToString("C")</h5>
+                <small class="text-muted">Pay from @(chitAccount?.Name ?? "bank account") when due</small>
+                @{
+                    var chitDueItems = breakdownItems.Where(i => i.IsChitDue).ToList();
+                }
+                @if (chitDueItems.Any())
+                {
+                    <ul class="list-unstyled mb-0 mt-2 small">
+                        @foreach (var item in chitDueItems)
+                        {
+                            <li class="d-flex justify-content-between align-items-center">
+                                <span>
+                                    @item.ExpenseDescription: @item.Amount.ToString("C") due
+                                    @if (item.Amount != item.ContributionAmount)
+                                    {
+                                        <span class="text-muted small">(contribution @item.ContributionAmount.ToString("C"))</span>
+                                    }
+                                </span>
+                                @if (item.IsPaid)
+                                { <span class="badge badge-success">Transferred</span> }
+                                else if (item.ExpenseId.HasValue)
+                                {
+                                    <form asp-action="RecordChitContribution" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="expenseId" value="@item.ExpenseId" />
+                                        <input type="hidden" name="year" value="@year" />
+                                        <input type="hidden" name="month" value="@month" />
+                                        <input type="hidden" name="amount" value="@item.ContributionAmount" />
+                                        <input type="hidden" name="paymentDate" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                                        <button type="submit" class="btn btn-sm btn-info">Transfer @item.ContributionAmount.ToString("C")</button>
+                                    </form>
+                                }
+                            </li>
+                        }
+                    </ul>
+                }
             </div>
         </div>
     </div>
 </div>
-<p>
-    <a asp-action="MonthlyBreakdown" asp-route-year="@year" asp-route-month="@month" class="btn btn-info">View Full Breakdown</a>
-    <a asp-action="Expenses" asp-route-year="@year" asp-route-month="@month" class="btn btn-outline-secondary">Manage Expenses</a>
-</p>
+
+<div class="row">
+    <div class="col-12 mb-3">
+        <div class="card border-secondary">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">Upcoming Chits → @chitLabel</h5>
+            </div>
+            <div class="card-body py-2">
+                <h5 class="text-secondary mb-2">@chitAllocation.ToString("C")</h5>
+                <small class="text-muted">Allocate to @(chitAccount?.Name ?? "bank") – pay when turn comes</small>
+                @if (upcomingChits.Any())
+                {
+                    <ul class="list-unstyled mb-0 mt-2 small">
+                        @foreach (var item in upcomingChits)
+                        {
+                            <li class="d-flex justify-content-between align-items-center">
+                                <span>@item.ExpenseDescription: @item.ContributionAmount.ToString("C") contribution</span>
+                                @if (item.IsPaid)
+                                { <span class="badge badge-success">Transferred</span> }
+                                else if (item.ExpenseId.HasValue && item.Type == BudgetPlanner.Web.Models.ExpenseType.Chit)
+                                {
+                                    <form asp-action="RecordChitContribution" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="expenseId" value="@item.ExpenseId" />
+                                        <input type="hidden" name="year" value="@year" />
+                                        <input type="hidden" name="month" value="@month" />
+                                        <input type="hidden" name="amount" value="@item.ContributionAmount" />
+                                        <input type="hidden" name="paymentDate" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                                        <button type="submit" class="btn btn-sm btn-info">Transfer @item.ContributionAmount.ToString("C")</button>
+                                    </form>
+                                }
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+    </div>
+</div>
 
 <div class="row mt-4">
     <div class="col-12">
@@ -105,3 +213,9 @@
         </div>
     </div>
 </div>
+
+<p class="mt-3">
+    <a asp-action="MonthlyBreakdown" asp-route-year="@year" asp-route-month="@month" class="btn btn-info">View Full Breakdown</a>
+    <a asp-action="Expenses" asp-route-year="@year" asp-route-month="@month" class="btn btn-outline-secondary">Manage Expenses</a>
+    <a asp-action="Accounts" class="btn btn-outline-secondary">Accounts</a>
+</p>
