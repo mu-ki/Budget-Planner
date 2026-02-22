@@ -60,69 +60,88 @@ namespace BudgetPlanner.Web.Services
 
         /// <summary>
         /// Compute how much to allocate for each expense in a given month.
-        /// - Monthly: full amount every month
-        /// - RecurringInterval: amount only in months when it falls due; monthly equivalent = amount / intervalMonths
+        /// Uses Payment Strategy Engine: PayNow or AccumulateInBank only.
         /// </summary>
         public (decimal totalExpense, List<MonthlyBreakdownItem> items) GetMonthlyExpenseBreakdown(string userId, int year, int month)
         {
             var items = new List<MonthlyBreakdownItem>();
             var targetDate = new DateTime(year, month, 1);
+            var start = new DateTime(year, month, 1);
+            var end = start.AddMonths(1);
             decimal total = 0;
+
+            // One-time expenses for this month (always Pay Now)
+            var oneTimeExpenses = _context.OneTimeExpenses
+                .Where(o => o.UserId == userId && o.ExpenseDate >= start && o.ExpenseDate < end)
+                .ToList();
+            foreach (var o in oneTimeExpenses)
+            {
+                items.Add(new MonthlyBreakdownItem
+                {
+                    ExpenseDescription = o.Description,
+                    Amount = o.Amount,
+                    Type = ExpenseType.OneTime,
+                    IntervalMonths = 1,
+                    Notes = "One-time expense",
+                    Strategy = PaymentStrategy.PayNow,
+                    IsMonthlyBill = true,
+                    IsChitDue = false
+                });
+                total += o.Amount;
+            }
 
             var expenses = _context.Expenses.Where(e => e.UserId == userId).ToList();
 
             foreach (var exp in expenses)
             {
-                if (exp.Type == ExpenseType.Monthly)
+                var strategy = GetPaymentStrategy(exp, targetDate);
+                var isYearly = exp.Type == ExpenseType.RecurringInterval && exp.IntervalMonths == 12;
+                var isChit = exp.Type == ExpenseType.Chit;
+
+                if (strategy == PaymentStrategy.PayNow)
                 {
                     items.Add(new MonthlyBreakdownItem
                     {
                         ExpenseDescription = exp.Description,
                         Amount = exp.Amount,
                         Type = exp.Type,
-                        IntervalMonths = 1,
-                        Notes = "Move to savings & pay",
-                        IsMonthlyBill = true,
-                        IsChitDue = false
+                        IntervalMonths = exp.Type == ExpenseType.Monthly ? 1 : exp.IntervalMonths,
+                        Notes = isYearly ? "Pay this month (yearly bill)" : exp.Type == ExpenseType.Monthly ? "Move to savings & pay" : "Pay from bank account (chit due)",
+                        Strategy = PaymentStrategy.PayNow,
+                        IsMonthlyBill = exp.Type == ExpenseType.Monthly || isYearly,
+                        IsChitDue = !isYearly && (exp.Type == ExpenseType.RecurringInterval || isChit)
                     });
                     total += exp.Amount;
                 }
-                else // RecurringInterval (chits, yearly)
+                else
                 {
-                    var isYearly = exp.IntervalMonths == 12;
-                    if (IsDueInMonth(exp, targetDate))
+                    var monthlyAllocation = exp.Amount / exp.IntervalMonths;
+                    items.Add(new MonthlyBreakdownItem
                     {
-                        items.Add(new MonthlyBreakdownItem
-                        {
-                            ExpenseDescription = exp.Description,
-                            Amount = exp.Amount,
-                            Type = exp.Type,
-                            IntervalMonths = exp.IntervalMonths,
-                            Notes = isYearly ? "Pay this month (yearly bill)" : "Pay from bank account (chit due)",
-                            IsMonthlyBill = isYearly,
-                            IsChitDue = !isYearly
-                        });
-                        total += exp.Amount;
-                    }
-                    else
-                    {
-                        var monthlyAllocation = exp.Amount / exp.IntervalMonths;
-                        items.Add(new MonthlyBreakdownItem
-                        {
-                            ExpenseDescription = exp.Description,
-                            Amount = monthlyAllocation,
-                            Type = exp.Type,
-                            IntervalMonths = exp.IntervalMonths,
-                            Notes = "Keep in bank account – accumulate for chit",
-                            IsMonthlyBill = false,
-                            IsChitDue = false
-                        });
-                        total += monthlyAllocation;
-                    }
+                        ExpenseDescription = exp.Description,
+                        Amount = monthlyAllocation,
+                        Type = exp.Type,
+                        IntervalMonths = exp.IntervalMonths,
+                        Notes = isChit ? "Chit – keep in bank, accumulate, pay when turn comes" : "Keep in bank account – accumulate (sinking fund)",
+                        Strategy = PaymentStrategy.AccumulateInBank,
+                        IsMonthlyBill = false,
+                        IsChitDue = false
+                    });
+                    total += monthlyAllocation;
                 }
             }
 
             return (total, items);
+        }
+
+        /// <summary>
+        /// Payment Strategy Engine: returns PayNow or AccumulateInBank.
+        /// PayNow = obligation due this month; AccumulateInBank = not due, allocate monthly.
+        /// </summary>
+        private PaymentStrategy GetPaymentStrategy(Expense exp, DateTime targetMonth)
+        {
+            var isDue = IsDueInMonth(exp, targetMonth);
+            return isDue ? PaymentStrategy.PayNow : PaymentStrategy.AccumulateInBank;
         }
 
         /// <summary>
@@ -183,6 +202,7 @@ namespace BudgetPlanner.Web.Services
                     ExpenseType = exp.Type,
                     IntervalMonths = exp.IntervalMonths,
                     InstallmentAmount = exp.Amount,
+                    StartDate = r.StartDate,
                     TenureEnd = r.TenureEnd,
                     TotalAmount = r.TotalAmount,
                     Notes = r.Notes,
@@ -239,6 +259,7 @@ namespace BudgetPlanner.Web.Services
                 ExpenseType = exp.Type,
                 IntervalMonths = exp.IntervalMonths,
                 InstallmentAmount = exp.Amount,
+                StartDate = r.StartDate,
                 TenureEnd = r.TenureEnd,
                 TotalAmount = r.TotalAmount,
                 Notes = r.Notes,
@@ -302,7 +323,7 @@ namespace BudgetPlanner.Web.Services
         /// <summary>
         /// Create a reserve account for an expense.
         /// </summary>
-        public async Task<ReserveAccount> CreateReserveAccount(string userId, int expenseId, decimal? totalAmount = null, DateTime? tenureEnd = null, string notes = null)
+        public async Task<ReserveAccount> CreateReserveAccount(string userId, int expenseId, decimal? totalAmount = null, DateTime? startDate = null, DateTime? tenureEnd = null, string notes = null)
         {
             var expense = await _context.Expenses.FirstOrDefaultAsync(e => e.Id == expenseId && e.UserId == userId);
             if (expense == null) return null;
@@ -313,6 +334,7 @@ namespace BudgetPlanner.Web.Services
                 ExpenseId = expenseId,
                 UserId = userId,
                 TotalAmount = totalAmount,
+                StartDate = startDate,
                 TenureEnd = tenureEnd,
                 Notes = notes
             };

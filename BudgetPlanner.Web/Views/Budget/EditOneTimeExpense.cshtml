@@ -1,11 +1,11 @@
-@model BudgetPlanner.Web.Models.RecurringIncome
+@model BudgetPlanner.Web.Models.OneTimeExpense
 @{
-    ViewData["Title"] = "Edit Recurring Income";
+    ViewData["Title"] = "Edit One-Time Expense";
 }
 
-<h1>Edit Recurring Income</h1>
+<h1>Edit One-Time Expense</h1>
 
-<form asp-action="EditRecurringIncome" method="post">
+<form asp-action="EditOneTimeExpense" method="post">
     <input type="hidden" asp-for="Id" />
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
     <div class="form-group">
@@ -19,25 +19,18 @@
         <span asp-validation-for="Amount" class="text-danger"></span>
     </div>
     <div class="form-group">
-        <label asp-for="IntervalMonths"></label>
-        <select asp-for="IntervalMonths" class="form-control">
-            <option value="1">Monthly</option>
-            <option value="12">Yearly</option>
-        </select>
-    </div>
-    <div class="form-group">
-        <label asp-for="StartDate"></label>
-        <input asp-for="StartDate" type="date" class="form-control" />
-        <span asp-validation-for="StartDate" class="text-danger"></span>
+        <label asp-for="ExpenseDate"></label>
+        <input asp-for="ExpenseDate" type="date" class="form-control" />
+        <span asp-validation-for="ExpenseDate" class="text-danger"></span>
     </div>
     <div class="form-group">
         <label asp-for="CategoryId"></label>
-        <select asp-for="CategoryId" class="form-control" asp-items="ViewBag.IncomeCategories">
+        <select asp-for="CategoryId" class="form-control" asp-items="ViewBag.ExpenseCategories">
             <option value="">-- Select Category (optional) --</option>
         </select>
     </div>
     <button type="submit" class="btn btn-primary">Save</button>
-    <a asp-action="RecurringIncomes" class="btn btn-secondary">Cancel</a>
+    <a asp-action="Expenses" asp-route-year="@Model.ExpenseDate.Year" asp-route-month="@Model.ExpenseDate.Month" class="btn btn-secondary">Cancel</a>
 </form>
 
 @section Scripts {

@@ -3,7 +3,10 @@ using System.ComponentModel.DataAnnotations;
 
 namespace BudgetPlanner.Web.Models
 {
-    public class Income
+    /// <summary>
+    /// One-time expense that occurs on a specific date (e.g. car repair, one-off purchase).
+    /// </summary>
+    public class OneTimeExpense
     {
         public int Id { get; set; }
 
@@ -17,8 +20,8 @@ namespace BudgetPlanner.Web.Models
 
         [Required]
         [DataType(DataType.Date)]
-        [Display(Name = "Income Date")]
-        public DateTime IncomeDate { get; set; }
+        [Display(Name = "Expense Date")]
+        public DateTime ExpenseDate { get; set; }
 
         [Display(Name = "Category")]
         public int? CategoryId { get; set; }

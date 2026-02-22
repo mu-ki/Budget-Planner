@@ -24,6 +24,7 @@
             <option value="0">Monthly Bill</option>
             <option value="1" data-interval="12">Yearly Bill</option>
             <option value="1" data-interval="">Recurring (every N months)</option>
+            <option value="2" data-interval="4">Chit</option>
         </select>
     </div>
     <div class="form-group" id="intervalGroup" style="display:none;">
@@ -36,8 +37,14 @@
         <input asp-for="StartDate" type="date" class="form-control" />
         <span asp-validation-for="StartDate" class="text-danger"></span>
     </div>
+    <div class="form-group">
+        <label asp-for="CategoryId"></label>
+        <select asp-for="CategoryId" class="form-control" asp-items="ViewBag.ExpenseCategories">
+            <option value="">-- Select Category (optional) --</option>
+        </select>
+    </div>
     <button type="submit" class="btn btn-primary">Save</button>
-    <a asp-action="Expenses" class="btn btn-secondary">Cancel</a>
+    <a asp-action="RecurringExpenses" class="btn btn-secondary">Cancel</a>
 </form>
 
 @section Scripts {
@@ -47,10 +54,10 @@
             var intervalGroup = document.getElementById('intervalGroup');
             var opt = this.options[this.selectedIndex];
             var interval = opt.getAttribute('data-interval');
-            intervalGroup.style.display = this.value === '1' ? 'block' : 'none';
+            intervalGroup.style.display = (this.value === '1' || this.value === '2') ? 'block' : 'none';
             if (interval) document.querySelector('[name="IntervalMonths"]').value = interval;
         });
-        // Select correct option when Type is RecurringInterval
+        // Select correct option when Type is RecurringInterval or Chit
         var intervalVal = document.querySelector('[name="IntervalMonths"]').value;
         var typeSelect = document.getElementById('expenseType');
         if (typeSelect.value === '1') {
@@ -58,6 +65,10 @@
                 var d = typeSelect.options[i].getAttribute('data-interval');
                 if (intervalVal === '12' && d === '12') { typeSelect.selectedIndex = i; break; }
                 if (intervalVal !== '12' && d === '') { typeSelect.selectedIndex = i; break; }
+            }
+        } else if (typeSelect.value === '2') {
+            for (var i = 0; i < typeSelect.options.length; i++) {
+                if (typeSelect.options[i].value === '2') { typeSelect.selectedIndex = i; break; }
             }
         }
         typeSelect.dispatchEvent(new Event('change'));

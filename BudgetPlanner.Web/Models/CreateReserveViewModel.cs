@@ -12,6 +12,10 @@ namespace BudgetPlanner.Web.Models
         public decimal? TotalAmount { get; set; }
 
         [DataType(DataType.Date)]
+        [Display(Name = "Start Date")]
+        public DateTime? StartDate { get; set; }
+
+        [DataType(DataType.Date)]
         [Display(Name = "Tenure End (optional)")]
         public DateTime? TenureEnd { get; set; }
 

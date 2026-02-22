@@ -14,6 +14,7 @@ namespace BudgetPlanner.Web.Models
         public ExpenseType ExpenseType { get; set; }
         public int IntervalMonths { get; set; }
         public decimal InstallmentAmount { get; set; }
+        public DateTime? StartDate { get; set; }
         public DateTime? TenureEnd { get; set; }
         public decimal? TotalAmount { get; set; }
         public string Notes { get; set; }

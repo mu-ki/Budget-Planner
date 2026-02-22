@@ -4,6 +4,14 @@
 }
 
 <h1>@Model.ExpenseDescription</h1>
+@if (Model.StartDate.HasValue || Model.TenureEnd.HasValue)
+{
+    <p class="text-muted">
+        @if (Model.StartDate.HasValue) { <span>Start: @Model.StartDate.Value.ToString("MMM yyyy")</span> }
+        @if (Model.StartDate.HasValue && Model.TenureEnd.HasValue) { <span> · </span> }
+        @if (Model.TenureEnd.HasValue) { <span>End: @Model.TenureEnd.Value.ToString("MMM yyyy")</span> }
+    </p>
+}
 
 <div class="row mb-4">
     <div class="col-md-3">
@@ -35,7 +43,7 @@
             <div class="card-body">
                 <h6>Installment</h6>
                 <h4 class="text-info">@Model.InstallmentAmount.ToString("C")</h4>
-                <small>@(Model.ExpenseType == BudgetPlanner.Web.Models.ExpenseType.Monthly ? "Monthly" : Model.IntervalMonths == 12 ? "Yearly" : $"Every {Model.IntervalMonths} months")</small>
+                <small>@(Model.ExpenseType == BudgetPlanner.Web.Models.ExpenseType.Monthly ? "Monthly" : Model.ExpenseType == BudgetPlanner.Web.Models.ExpenseType.Chit ? $"Chit ({Model.IntervalMonths} months)" : Model.IntervalMonths == 12 ? "Yearly" : $"Every {Model.IntervalMonths} months")</small>
             </div>
         </div>
     </div>
@@ -44,6 +52,7 @@
 <div class="mb-3">
     <a asp-action="AddAllocation" asp-route-reserveAccountId="@Model.Id" asp-route-year="@DateTime.Now.Year" asp-route-month="@DateTime.Now.Month" class="btn btn-success">Record Allocation (Save)</a>
     <a asp-action="AddPayment" asp-route-reserveAccountId="@Model.Id" class="btn btn-danger">Record Payment</a>
+    <a asp-action="EditReserve" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Edit Start/End Date</a>
 </div>
 
 <div class="row">

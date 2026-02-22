@@ -1,0 +1,40 @@
+---
+description: Payment Strategy Engine – two strategies for expense handling
+globs: "**/BudgetService.cs,**/MonthlyBreakdown*.cs,**/*Breakdown*.cshtml,**/Expense*.cs"
+alwaysApply: false
+---
+
+# Payment Strategy Engine
+
+The Budget Planner uses exactly **two payment strategies**. There are no other modes.
+
+## Strategy 1: Pay Now
+
+- **Meaning**: Pay the full amount in the current month.
+- **When**: The obligation is due this month (monthly bill, yearly bill when due, or recurring expense when its term falls due).
+- **Action**: User pays the full amount. Money leaves the bank / goes to the payee.
+- **Monthly amount**: Full expense amount.
+
+## Strategy 2: Accumulate in Bank (Sinking Fund Mode)
+
+- **Meaning**: Do not pay yet. Allocate monthly and keep the money in the bank until the obligation comes due.
+- **When**: The obligation is not due this month (e.g. 4‑month chit, 6‑month loan – allocate in months 1–3 or 1–5).
+- **Action**: User allocates the monthly share; money stays in the bank account.
+- **Monthly amount**: `Amount / IntervalMonths` (e.g. 10,000 every 4 months → 2,500/month).
+
+## Decision Logic
+
+| Expense Type        | Due This Month? | Strategy                   |
+|---------------------|-----------------|----------------------------|
+| One-time            | Yes (date match)| Pay Now                    |
+| Monthly             | Yes (always)    | Pay Now                    |
+| Yearly              | Yes             | Pay Now                    |
+| Yearly              | No              | Accumulate in Bank         |
+| Recurring (N months)| Yes             | Pay Now                    |
+| Recurring (N months)| No              | Accumulate in Bank         |
+
+## Implementation Notes
+
+- Do not add a third strategy. Keep it to these two only.
+- "Pay Now" = move to savings & pay, or pay from bank when due.
+- "Accumulate in Bank" = keep in bank account, allocate monthly, pay when term comes.

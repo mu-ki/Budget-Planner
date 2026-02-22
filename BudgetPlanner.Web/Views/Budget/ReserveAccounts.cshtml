@@ -23,6 +23,20 @@
     Sinking funds for bills and chits. Save each month (allocate) and pay from the balance when the turn comes.
 </p>
 
+@if (Model.Any())
+{
+    var totalBalance = Model.Sum(r => r.Balance);
+    var totalSaved = Model.Sum(r => r.TotalAllocated);
+    var totalPaid = Model.Sum(r => r.TotalPaid);
+    <div class="card mb-3">
+        <div class="card-body">
+            <strong>Total across all reserve accounts:</strong>
+            <span class="font-weight-bold @(totalBalance >= 0 ? "text-primary" : "text-warning")">@totalBalance.ToString("C")</span>
+            <span class="text-muted">(Saved: @totalSaved.ToString("C") · Paid: @totalPaid.ToString("C"))</span>
+        </div>
+    </div>
+}
+
 @if (!Model.Any())
 {
     <div class="alert alert-info">
@@ -71,6 +85,7 @@ else
                         </td>
                         <td>
                             <a asp-action="ReserveAccountDetail" asp-route-id="@r.Id" class="btn btn-sm btn-outline-primary">Details</a>
+                            <a asp-action="EditReserve" asp-route-id="@r.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
                             <a asp-action="AddAllocation" asp-route-reserveAccountId="@r.Id" asp-route-year="@year" asp-route-month="@month" class="btn btn-sm btn-success">Save</a>
                             @if (r.IsDueThisMonth)
                             {

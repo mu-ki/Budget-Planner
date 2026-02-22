@@ -9,6 +9,7 @@
     var moveToSavings = (decimal)(ViewBag.MoveToSavings ?? 0m);
     var chitPayment = (decimal)(ViewBag.ChitPaymentThisMonth ?? 0m);
     var chitAllocation = (decimal)(ViewBag.ChitAllocationThisMonth ?? 0m);
+    var chitsUseReserves = (bool)(ViewBag.ChitsUseReserves ?? false);
     var prevMonth = month == 1 ? 12 : month - 1;
     var prevYear = month == 1 ? year - 1 : year;
     var nextMonth = month == 12 ? 1 : month + 1;
@@ -63,29 +64,29 @@
     <div class="col-md-6 mb-3">
         <div class="card border-info">
             <div class="card-header bg-info text-white">
-                <h6 class="mb-0">Chit Due – Pay from Bank Account</h6>
+                <h6 class="mb-0">Chit Due – Pay @(chitsUseReserves ? "from Reserve" : "from Bank Account")</h6>
             </div>
             <div class="card-body py-2">
                 <h5 class="text-info mb-0">@chitPayment.ToString("C")</h5>
-                <small class="text-muted">Chits due this month – pay from bank account</small>
+                <small class="text-muted">Chits due this month – pay @(chitsUseReserves ? "from reserve" : "from bank account")</small>
             </div>
         </div>
     </div>
     <div class="col-md-6 mb-3">
         <div class="card border-secondary">
             <div class="card-header bg-secondary text-white">
-                <h6 class="mb-0">Chit – Keep in Bank Account</h6>
+                <h6 class="mb-0">Chit – @(chitsUseReserves ? "Allocate to Reserve" : "Keep in Bank Account")</h6>
             </div>
             <div class="card-body py-2">
                 <h5 class="text-secondary mb-0">@chitAllocation.ToString("C")</h5>
-                <small class="text-muted">Allocate & accumulate – pay when chit term comes</small>
+                <small class="text-muted">@(chitsUseReserves ? "Allocate to reserve – pay from reserve when chit term comes" : "Allocate & accumulate – pay when chit term comes")</small>
             </div>
         </div>
     </div>
 </div>
 <p>
     <a asp-action="MonthlyBreakdown" asp-route-year="@year" asp-route-month="@month" class="btn btn-info">View Full Breakdown</a>
-    <a asp-action="Expenses" class="btn btn-outline-secondary">Manage Expenses</a>
+    <a asp-action="Expenses" asp-route-year="@year" asp-route-month="@month" class="btn btn-outline-secondary">Manage Expenses</a>
 </p>
 
 <div class="row mt-4">
@@ -95,8 +96,10 @@
                 <h5 class="mb-0">Quick Actions</h5>
             </div>
             <div class="card-body">
-                <a asp-action="AddIncome" class="btn btn-success mr-2">Add Income</a>
-                <a asp-action="AddExpense" class="btn btn-danger mr-2">Add Expense</a>
+                <a asp-action="AddIncome" class="btn btn-success mr-2">Add One-time Income</a>
+                <a asp-action="AddRecurringIncome" class="btn btn-outline-success mr-2">Add Recurring Income</a>
+                <a asp-action="AddOneTimeExpense" asp-route-year="@year" asp-route-month="@month" class="btn btn-danger mr-2">Add One-time Expense</a>
+                <a asp-action="AddExpense" class="btn btn-outline-danger mr-2">Add Recurring Expense</a>
                 <a asp-action="MonthlyBreakdown" asp-route-year="@year" asp-route-month="@month" class="btn btn-info">View Monthly Breakdown</a>
             </div>
         </div>

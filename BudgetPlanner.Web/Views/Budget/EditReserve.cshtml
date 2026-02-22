@@ -1,0 +1,28 @@
+@model BudgetPlanner.Web.Models.EditReserveViewModel
+@{
+    ViewData["Title"] = "Edit Reserve Account";
+}
+
+<h1>Edit Reserve Account</h1>
+
+<p>Update dates for <strong>@Model.ExpenseDescription</strong></p>
+
+<form asp-action="EditReserve" method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <input type="hidden" asp-for="Id" />
+    <div class="form-group">
+        <label asp-for="StartDate"></label>
+        <input asp-for="StartDate" type="date" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label asp-for="TenureEnd"></label>
+        <input asp-for="TenureEnd" type="date" class="form-control" />
+        <small class="form-text text-muted">When this obligation ends.</small>
+    </div>
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a asp-action="ReserveAccountDetail" asp-route-id="@Model.Id" class="btn btn-secondary">Cancel</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

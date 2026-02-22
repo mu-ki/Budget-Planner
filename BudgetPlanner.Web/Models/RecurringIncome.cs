@@ -29,6 +29,10 @@ namespace BudgetPlanner.Web.Models
         [Display(Name = "Start Date")]
         public DateTime StartDate { get; set; }
 
+        [Display(Name = "Category")]
+        public int? CategoryId { get; set; }
+        public Category Category { get; set; }
+
         public string UserId { get; set; }
     }
 }

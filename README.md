@@ -33,6 +33,15 @@ A personal budget planning application built with ASP.NET Core MVC, Entity Frame
 - Chits stay in bank account, accumulate, pay when chit term comes  
 - Balance = Salary − (move to savings + chit payment + chit allocation)
 
+### Payment Strategy Engine (exactly two strategies)
+
+| Strategy | When | Action |
+|----------|------|--------|
+| **Pay Now** | Obligation is due this month | Pay full amount; money leaves the bank |
+| **Accumulate in Bank** (sinking fund) | Obligation not due yet | Allocate monthly share; keep in bank until due |
+
+Keep it simple—no additional strategies.
+
 ---
 
 ## Features

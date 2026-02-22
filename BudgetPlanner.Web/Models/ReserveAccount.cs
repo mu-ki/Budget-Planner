@@ -27,6 +27,13 @@ namespace BudgetPlanner.Web.Models
         public decimal? TotalAmount { get; set; }
 
         /// <summary>
+        /// When this reserve obligation starts. Optional.
+        /// </summary>
+        [DataType(DataType.Date)]
+        [Display(Name = "Start Date")]
+        public DateTime? StartDate { get; set; }
+
+        /// <summary>
         /// When this obligation ends (e.g. chit tenure end). Optional.
         /// </summary>
         [DataType(DataType.Date)]

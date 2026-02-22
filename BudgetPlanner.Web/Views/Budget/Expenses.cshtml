@@ -1,25 +1,127 @@
-@model IEnumerable<BudgetPlanner.Web.Models.Expense>
+@model IEnumerable<BudgetPlanner.Web.Models.OneTimeExpense>
 @{
     ViewData["Title"] = "Expenses";
-    var idsWithReserve = ViewBag.ExpenseIdsWithReserve as HashSet<int> ?? new HashSet<int>();
-    var expenseToReserve = ViewBag.ExpenseIdToReserveId as Dictionary<int, int> ?? new Dictionary<int, int>();
+    var year = (int)ViewBag.Year;
+    var month = (int)ViewBag.Month;
+    var monthName = (string)ViewBag.MonthName;
+    var totalExpense = ViewBag.TotalExpenseForMonth as decimal? ?? 0m;
+    var recurringList = ViewBag.RecurringExpenses as IEnumerable<BudgetPlanner.Web.Models.Expense>;
+    var expenseCategories = ViewBag.ExpenseCategories as Microsoft.AspNetCore.Mvc.Rendering.SelectList;
+    var selectedCategoryId = ViewBag.SelectedCategoryId as int?;
+    var prevMonth = month == 1 ? 12 : month - 1;
+    var prevYear = month == 1 ? year - 1 : year;
+    var nextMonth = month == 12 ? 1 : month + 1;
+    var nextYear = month == 12 ? year + 1 : year;
+}
+@functions {
+    DateTime GetNextDate(BudgetPlanner.Web.Models.Expense item)
+    {
+        var today = DateTime.Today;
+        var d = item.StartDate.Date;
+        int interval = item.Type == BudgetPlanner.Web.Models.ExpenseType.Monthly ? 1 : item.IntervalMonths;
+        while (d < today) d = d.AddMonths(interval);
+        return d;
+    }
 }
 
-<h1>Expenses</h1>
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <h1>Expenses - @monthName @year</h1>
+    <div class="d-flex align-items-center gap-2">
+        @if (expenseCategories != null)
+        {
+            <form asp-action="Expenses" method="get" class="d-flex align-items-center gap-2">
+                <input type="hidden" name="year" value="@year" />
+                <input type="hidden" name="month" value="@month" />
+                <label for="categoryId" class="form-label mb-0">Category:</label>
+                <select name="categoryId" id="categoryId" class="form-select form-select-sm" style="width: auto;" onchange="this.form.submit()">
+                    <option value="">All categories</option>
+                    @foreach (var item in expenseCategories)
+                    {
+                        var isSelected = item.Value == selectedCategoryId?.ToString();
+                        if (isSelected)
+                        {
+                            <option value="@item.Value" selected>@item.Text</option>
+                        }
+                        else
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    }
+                </select>
+            </form>
+        }
+        <div class="btn-group">
+            <a asp-action="Expenses" asp-route-year="@prevYear" asp-route-month="@prevMonth" asp-route-categoryId="@selectedCategoryId" class="btn btn-outline-secondary">← Previous</a>
+            <span class="btn btn-secondary disabled">@monthName @year</span>
+            <a asp-action="Expenses" asp-route-year="@nextYear" asp-route-month="@nextMonth" asp-route-categoryId="@selectedCategoryId" class="btn btn-outline-secondary">Next →</a>
+        </div>
+    </div>
+</div>
 
 <p>
-    <a asp-action="AddExpense" class="btn btn-danger">Add Expense</a>
+    <a asp-action="AddOneTimeExpense" asp-route-year="@year" asp-route-month="@month" class="btn btn-danger">Add One-time Expense</a>
+    <a asp-action="AddExpense" class="btn btn-outline-danger">Add Recurring Expense</a>
+    <a asp-action="RecurringExpenses" class="btn btn-outline-secondary">Manage Recurring</a>
     <a asp-action="Dashboard" class="btn btn-secondary">Back to Dashboard</a>
 </p>
 
+<div class="card mb-3">
+    <div class="card-body">
+        <strong>Total Expenses for @monthName @year:</strong> <span class="text-danger font-weight-bold">@totalExpense.ToString("C")</span>
+        <span class="text-muted">(includes one-time + recurring)</span>
+    </div>
+</div>
+@if (recurringList != null && recurringList.Any())
+{
+    <div class="card mb-3 border-danger">
+        <div class="card-header bg-light"><strong>Recurring Expenses</strong> (included automatically)</div>
+        <div class="card-body py-2 px-0">
+            <div class="table-responsive">
+                <table class="table table-sm table-borderless mb-0">
+                    <thead>
+                        <tr class="text-muted small">
+                            <th class="border-0 px-3">Description</th>
+                            <th class="border-0">Category</th>
+                            <th class="border-0 text-end">Amount</th>
+                            <th class="border-0">Interval</th>
+                            <th class="border-0 text-end px-3">Next Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in recurringList)
+                        {
+                            <tr>
+                                <td class="px-3">@r.Description</td>
+                                <td>@(r.Category?.Name ?? "—")</td>
+                                <td class="text-danger text-end">@r.Amount.ToString("C")</td>
+                                <td>
+                                    @if (r.Type == BudgetPlanner.Web.Models.ExpenseType.Monthly)
+                                    { <span class="badge badge-primary">Monthly</span> }
+                                    else if (r.Type == BudgetPlanner.Web.Models.ExpenseType.Chit)
+                                    { <span class="badge badge-warning">Chit (@r.IntervalMonths mo)</span> }
+                                    else if (r.IntervalMonths == 12)
+                                    { <span class="badge badge-info">Yearly</span> }
+                                    else
+                                    { <span class="badge badge-secondary">Every @r.IntervalMonths mo</span> }
+                                </td>
+                                <td class="text-end px-3"><span class="badge badge-light border text-dark">@GetNextDate(r).ToString("MMM d, yyyy")</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+
+<h5>One-time Expenses for @monthName @year</h5>
 <table class="table table-striped">
     <thead>
         <tr>
             <th>Description</th>
+            <th>Category</th>
             <th>Amount</th>
-            <th>Type</th>
-            <th>Interval</th>
-            <th>Start Date</th>
+            <th>Date</th>
             <th></th>
         </tr>
     </thead>
@@ -28,34 +130,12 @@
         {
             <tr>
                 <td>@item.Description</td>
+                <td>@(item.Category?.Name ?? "—")</td>
                 <td class="text-danger">@item.Amount.ToString("C")</td>
+                <td>@item.ExpenseDate.ToString("yyyy-MM-dd")</td>
                 <td>
-                    @if (item.Type == BudgetPlanner.Web.Models.ExpenseType.Monthly)
-                    {
-                        <span class="badge badge-primary">Monthly Bill</span>
-                    }
-                    else if (item.IntervalMonths == 12)
-                    {
-                        <span class="badge badge-info">Yearly Bill</span>
-                    }
-                    else
-                    {
-                        <span class="badge badge-info">Every @item.IntervalMonths months</span>
-                    }
-                </td>
-                <td>@(item.Type == BudgetPlanner.Web.Models.ExpenseType.Monthly ? "Monthly" : item.IntervalMonths == 12 ? "Yearly" : $"Every {item.IntervalMonths} months")</td>
-                <td>@item.StartDate.ToString("yyyy-MM-dd")</td>
-                <td>
-                    @if (idsWithReserve.Contains(item.Id) && expenseToReserve.ContainsKey(item.Id))
-                    {
-                        <a asp-action="ReserveAccountDetail" asp-route-id="@expenseToReserve[item.Id]" class="btn btn-sm btn-success">Reserve</a>
-                    }
-                    else
-                    {
-                        <a asp-action="CreateReserve" asp-route-expenseId="@item.Id" class="btn btn-sm btn-outline-success">Create Reserve</a>
-                    }
-                    <a asp-action="EditExpense" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Edit</a>
-                    <form asp-action="DeleteExpense" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Delete this expense?');">
+                    <a asp-action="EditOneTimeExpense" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+                    <form asp-action="DeleteOneTimeExpense" asp-route-id="@item.Id" asp-route-year="@year" asp-route-month="@month" method="post" class="d-inline" onsubmit="return confirm('Delete this one-time expense?');">
                         @Html.AntiForgeryToken()
                         <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                     </form>
@@ -67,5 +147,5 @@
 
 @if (!Model.Any())
 {
-    <p class="text-muted">No expenses defined. <a asp-action="AddExpense">Add your first expense</a>.</p>
+    <p class="text-muted">No one-time expenses for @monthName @year. <a asp-action="AddOneTimeExpense" asp-route-year="@year" asp-route-month="@month">Add one-time expense</a> or <a asp-action="AddExpense">add recurring expense</a> (e.g. rent, utilities).</p>
 }
